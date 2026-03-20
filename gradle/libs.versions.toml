@@ -1,0 +1,35 @@
+# Version catalog is a central place for you to declare and version dependencies
+# https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
+# https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
+
+[versions]
+kotlin = "2.3.20"
+
+# Project specific dependencies
+smithy = "1.68.0"
+javapoet = "0.12.0"
+junit = "6.0.3"
+assertk = "0.28.1"
+
+[libraries]
+kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
+# Smithy
+smithy-build = { module = "software.amazon.smithy:smithy-build", version.ref = "smithy" }
+smithy-codegenCore = { module = "software.amazon.smithy:smithy-codegen-core", version.ref = "smithy" }
+smithy-model = { module = "software.amazon.smithy:smithy-model", version.ref = "smithy" }
+
+# Code Generation
+javapoet = { module = "com.palantir.javapoet:javapoet", version.ref = "javapoet" }
+
+# Testing
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+assertk-core = { module = "com.willowtreeapps.assertk:assertk", version.ref = "assertk" }
+
+# Libraries can be bundled together for easier import
+[bundles]
+
+[plugins]
+kotlinPluginSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
