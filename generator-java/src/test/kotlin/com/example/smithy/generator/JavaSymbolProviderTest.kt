@@ -70,4 +70,34 @@ class JavaSymbolProviderTest {
         assertThat(symbol.name).isEqualTo("String")
         assertThat(symbol.namespace).isEqualTo("java.lang")
     }
+
+    @Test
+    fun `maps bigInteger shape to java math BigInteger`() {
+        val shapeId = ShapeId.from("com.example#MyBigInt")
+        val model = Model.assembler()
+            .addUnparsedModel("test.smithy", "namespace com.example\nbigInteger MyBigInt")
+            .assemble()
+            .unwrap()
+        
+        val provider = JavaSymbolProvider(model, "com.example.generated")
+        val symbol = provider.toSymbol(model.expectShape(shapeId))
+        
+        assertThat(symbol.name).isEqualTo("BigInteger")
+        assertThat(symbol.namespace).isEqualTo("java.math")
+    }
+
+    @Test
+    fun `maps bigDecimal shape to java math BigDecimal`() {
+        val shapeId = ShapeId.from("com.example#MyBigDecimal")
+        val model = Model.assembler()
+            .addUnparsedModel("test.smithy", "namespace com.example\nbigDecimal MyBigDecimal")
+            .assemble()
+            .unwrap()
+        
+        val provider = JavaSymbolProvider(model, "com.example.generated")
+        val symbol = provider.toSymbol(model.expectShape(shapeId))
+        
+        assertThat(symbol.name).isEqualTo("BigDecimal")
+        assertThat(symbol.namespace).isEqualTo("java.math")
+    }
 }

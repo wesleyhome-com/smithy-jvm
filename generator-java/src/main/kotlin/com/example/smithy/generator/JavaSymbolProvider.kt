@@ -40,6 +40,8 @@ class JavaSymbolProvider(
             ShapeType.BOOLEAN -> builder.name("Boolean").namespace("java.lang", ".")
             ShapeType.FLOAT -> builder.name("Float").namespace("java.lang", ".")
             ShapeType.DOUBLE -> builder.name("Double").namespace("java.lang", ".")
+            ShapeType.BIG_INTEGER -> builder.name("BigInteger").namespace("java.math", ".")
+            ShapeType.BIG_DECIMAL -> builder.name("BigDecimal").namespace("java.math", ".")
             ShapeType.BYTE -> builder.name("Byte").namespace("java.lang", ".")
             ShapeType.BLOB -> builder.name("byte[]")
             ShapeType.DOCUMENT -> builder.name("String").namespace("java.lang", ".")

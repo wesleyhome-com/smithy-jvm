@@ -40,6 +40,8 @@ private fun getBaseTypeName(name: String, namespace: String = ""): TypeName {
         "Float" -> ClassName.get("java.lang", "Float")
         "Double" -> ClassName.get("java.lang", "Double")
         "Byte" -> ClassName.get("java.lang", "Byte")
+        "BigInteger" -> ClassName.get("java.math", "BigInteger")
+        "BigDecimal" -> ClassName.get("java.math", "BigDecimal")
         "byte[]" -> ArrayTypeName.of(TypeName.BYTE)
         "Instant" -> ClassName.get("java.time", "Instant")
         else -> if (namespace.isNotEmpty()) ClassName.get(namespace, name) else ClassName.bestGuess(name)
