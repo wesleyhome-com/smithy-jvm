@@ -4,6 +4,7 @@ import com.palantir.javapoet.*
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.EnumShape
+import software.amazon.smithy.model.shapes.IntEnumShape
 import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.StringShape
 import software.amazon.smithy.model.traits.DocumentationTrait
@@ -11,15 +12,18 @@ import software.amazon.smithy.model.traits.EnumTrait
 import javax.lang.model.element.Modifier
 
 /**
- * Generates a Java enum for a Smithy EnumShape or a StringShape with the @enum trait.
+ * Generates a Java enum for a Smithy EnumShape, IntEnumShape, or a StringShape with the @enum trait.
  */
 class JavaEnumGenerator : ShapeGenerator<Shape> {
     override val shapeType: Class<Shape> = Shape::class.java
 
     override fun generate(shape: Shape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
-        if (shape !is EnumShape && !(shape is StringShape && shape.hasTrait(EnumTrait::class.java))) {
+        if (shape !is EnumShape && shape !is IntEnumShape && !(shape is StringShape && shape.hasTrait(EnumTrait::class.java))) {
             return ShapeGenerator.Result()
         }
+
+        val isIntEnum = shape is IntEnumShape
+        val valueType = if (isIntEnum) Integer::class.java else String::class.java
 
         val symbol = symbolProvider.toSymbol(shape)
         val className = ClassName.get(symbol.namespace, symbol.name)
@@ -48,6 +52,19 @@ class JavaEnumGenerator : ShapeGenerator<Shape> {
                 }
                 typeBuilder.addEnumConstant(name, enumConstantBuilder.build())
             }
+        } else if (shape is IntEnumShape) {
+            for (member in shape.allMembers.values) {
+                val name = member.memberName
+                val value = member.expectTrait(software.amazon.smithy.model.traits.EnumValueTrait::class.java).intValue.get()
+                val enumConstantBuilder = TypeSpec.anonymousClassBuilder("\$L", value)
+                if (member.hasTrait(software.amazon.smithy.model.traits.DeprecatedTrait::class.java)) {
+                    enumConstantBuilder.addAnnotation(Deprecated::class.java)
+                }
+                member.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
+                    enumConstantBuilder.addJavadoc("\$L\n", trait.value)
+                }
+                typeBuilder.addEnumConstant(name, enumConstantBuilder.build())
+            }
         } else if (shape is StringShape && shape.hasTrait(EnumTrait::class.java)) {
             val enumTrait = shape.expectTrait(EnumTrait::class.java)
             for (definition in enumTrait.values) {
@@ -65,35 +82,51 @@ class JavaEnumGenerator : ShapeGenerator<Shape> {
         }
 
         // Add fallback constant for backward compatibility
-        typeBuilder.addEnumConstant("UNKNOWN_TO_SDK_VERSION", TypeSpec.anonymousClassBuilder("\$S", "UNKNOWN_TO_SDK_VERSION")
+        val fallbackValueStr = if (isIntEnum) "null" else "\$S"
+        val fallbackValueArg = if (isIntEnum) emptyArray<Any>() else arrayOf("UNKNOWN_TO_SDK_VERSION")
+        
+        typeBuilder.addEnumConstant("UNKNOWN_TO_SDK_VERSION", TypeSpec.anonymousClassBuilder(fallbackValueStr, *fallbackValueArg)
             .addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonEnumDefaultValue"))
             .build())
 
         // Add value field and constructor
-        typeBuilder.addField(String::class.java, "value", Modifier.PRIVATE, Modifier.FINAL)
+        typeBuilder.addField(valueType, "value", Modifier.PRIVATE, Modifier.FINAL)
         
         typeBuilder.addMethod(MethodSpec.constructorBuilder()
-            .addParameter(String::class.java, "value")
+            .addParameter(valueType, "value")
             .addStatement("this.value = value")
             .build())
 
         // Add @JsonValue getter
-        typeBuilder.addMethod(MethodSpec.methodBuilder("toString")
-            .addAnnotation(Override::class.java)
+        val getterBuilder = MethodSpec.methodBuilder("getValue")
             .addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"))
             .addModifiers(Modifier.PUBLIC)
-            .returns(String::class.java)
+            .returns(valueType)
             .addStatement("return value")
-            .build())
+
+        typeBuilder.addMethod(getterBuilder.build())
+        
+        // Add toString for String enums specifically if needed
+        if (!isIntEnum) {
+            typeBuilder.addMethod(MethodSpec.methodBuilder("toString")
+                .addAnnotation(Override::class.java)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(String::class.java)
+                .addStatement("return String.valueOf(value)")
+                .build())
+        }
 
         // Add @JsonCreator factory method
         val creatorBuilder = MethodSpec.methodBuilder("fromValue")
             .addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonCreator"))
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(className)
-            .addParameter(String::class.java, "value")
+            .addParameter(valueType, "value")
+            .beginControlFlow("if (value == null)")
+            .addStatement("return UNKNOWN_TO_SDK_VERSION")
+            .endControlFlow()
             .beginControlFlow("for (\$T b : \$T.values())", className, className)
-            .beginControlFlow("if (b.value.equals(value))")
+            .beginControlFlow("if (value.equals(b.value))")
             .addStatement("return b")
             .endControlFlow()
             .endControlFlow()

@@ -539,18 +539,18 @@ enum MediaType {
 
 @documentation("The state of a resource reservation.")
 @tags(["Reservations"])
-enum ReservationStatus {
+intEnum ReservationStatus {
     @documentation("The reservation has been requested but not yet confirmed.")
-    PENDING = "pending"
+    PENDING = 1
 
     @documentation("The reservation has been confirmed and is scheduled.")
-    CONFIRMED = "confirmed"
+    CONFIRMED = 2
 
     @documentation("The reservation was cancelled before it occurred.")
-    CANCELLED = "cancelled"
+    CANCELLED = 3
 
     @documentation("The reservation time passed without it being utilized or formally cancelled.")
-    EXPIRED = "expired"
+    EXPIRED = 4
 }
 
 @documentation("A list of media items.")
