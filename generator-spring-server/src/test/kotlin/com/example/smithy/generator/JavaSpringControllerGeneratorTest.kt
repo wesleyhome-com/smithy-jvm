@@ -126,4 +126,52 @@ class JavaSpringControllerGeneratorTest {
         assertThat(result.validationEvents[0].id).isEqualTo("MultiplePayloadMembers")
         assertThat(result.validationEvents[0].severity).isEqualTo(Severity.ERROR)
     }
+
+    @Test
+    fun `generates controller with operations bound to resources`() {
+        val model = Model.assembler()
+            .addUnparsedModel("test.smithy", """
+                namespace com.example
+                
+                service MyService {
+                    resources: [MyResource]
+                }
+                
+                resource MyResource {
+                    identifiers: { id: String }
+                    read: GetResource
+                }
+                
+                @readonly
+                @tags(["Resource"])
+                operation GetResource {
+                    input: GetResourceInput,
+                    output: GetResourceOutput
+                }
+                structure GetResourceInput {
+                    @required
+                    @httpLabel
+                    id: String
+                }
+                structure GetResourceOutput {
+                    name: String
+                }
+            """.trimIndent())
+            .assemble()
+            .unwrap()
+        
+        val serviceId = ShapeId.from("com.example#MyService")
+        val service = model.expectShape(serviceId, ServiceShape::class.java)
+        val symbolProvider = JavaSymbolProvider(model, "com.example.generated")
+        
+        val generator = JavaSpringControllerGenerator()
+        val result = generator.generate(service, model, symbolProvider)
+        val code = result.files.first().content
+        
+        assertThat(code).contains("@RestController")
+        assertThat(code).contains("public class ResourceController")
+        assertThat(code).contains("private final GetResourceApi getResourceApi;")
+        assertThat(code).contains("public ResourceController(GetResourceApi getResourceApi)")
+        assertThat(code).contains("return getResourceApi.getResource(id);")
+    }
 }

@@ -3,6 +3,7 @@ package com.example.smithy.generator
 import com.palantir.javapoet.*
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
+import software.amazon.smithy.model.knowledge.TopDownIndex
 import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.model.shapes.StructureShape
@@ -18,8 +19,10 @@ class JavaSpringGlobalExceptionHandlerGenerator : ShapeGenerator<ServiceShape> {
 
     override fun generate(shape: ServiceShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
         // Find all unique error shapes used by the service's operations
-        val errorShapes = shape.operations.asSequence()
-            .map { model.expectShape(it, OperationShape::class.java) }
+        val topDownIndex = TopDownIndex.of(model)
+        val operations = topDownIndex.getContainedOperations(shape)
+        
+        val errorShapes = operations.asSequence()
             .flatMap { it.getErrors() }
             .distinct()
             .map { model.expectShape(it, StructureShape::class.java) }

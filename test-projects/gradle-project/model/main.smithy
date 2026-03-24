@@ -17,10 +17,19 @@ service LibraryService {
         ReserveComputer
         ListReservations
         CancelReservation
-        // Patron Domain
-        GetPatronInfo
-        UpdatePatronContact
     ]
+    resources: [
+        PatronResource
+    ]
+}
+
+@documentation("A library patron resource.")
+resource PatronResource {
+    identifiers: {
+        id: String
+    }
+    read: GetPatronInfo
+    update: UpdatePatronContact
 }
 
 // --- Catalog Operations ---

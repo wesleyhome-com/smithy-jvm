@@ -3,6 +3,7 @@ package com.example.smithy.generator
 import com.palantir.javapoet.*
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
+import software.amazon.smithy.model.knowledge.TopDownIndex
 import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.model.shapes.Shape
@@ -34,7 +35,8 @@ class JavaSpringControllerGenerator(
         val generatedFiles = mutableListOf<GeneratedFile>()
         
         val serviceSymbol = symbolProvider.toSymbol(shape)
-        val operations = shape.operations.map { model.expectShape(it, OperationShape::class.java) }
+        val topDownIndex = TopDownIndex.of(model)
+        val operations = topDownIndex.getContainedOperations(shape).toList()
         
         // Group Operations by Tag for Controllers
         val groupedOperations = operations.groupBy { getPrimaryTag(it) }

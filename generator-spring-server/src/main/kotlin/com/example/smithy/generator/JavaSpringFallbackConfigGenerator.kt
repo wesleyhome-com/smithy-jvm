@@ -3,6 +3,7 @@ package com.example.smithy.generator
 import com.palantir.javapoet.*
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
+import software.amazon.smithy.model.knowledge.TopDownIndex
 import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.utils.StringUtils
@@ -16,7 +17,8 @@ class JavaSpringFallbackConfigGenerator : ShapeGenerator<ServiceShape> {
 
     override fun generate(shape: ServiceShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
         val serviceSymbol = symbolProvider.toSymbol(shape)
-        val operations = shape.operations.map { model.expectShape(it, OperationShape::class.java) }
+        val topDownIndex = TopDownIndex.of(model)
+        val operations = topDownIndex.getContainedOperations(shape).toList()
         
         val className = "SpringDelegateFallbackConfiguration"
         // Base package or a config subpackage
