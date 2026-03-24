@@ -55,4 +55,19 @@ class JavaSymbolProviderTest {
         assertThat(symbol.name).isEqualTo("Instant")
         assertThat(symbol.namespace).isEqualTo("java.time")
     }
+
+    @Test
+    fun `maps document shape to java String`() {
+        val shapeId = ShapeId.from("com.example#MyDocument")
+        val model = Model.assembler()
+            .addUnparsedModel("test.smithy", "namespace com.example\ndocument MyDocument")
+            .assemble()
+            .unwrap()
+        
+        val provider = JavaSymbolProvider(model, "com.example.generated")
+        val symbol = provider.toSymbol(model.expectShape(shapeId))
+        
+        assertThat(symbol.name).isEqualTo("String")
+        assertThat(symbol.namespace).isEqualTo("java.lang")
+    }
 }

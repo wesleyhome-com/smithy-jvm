@@ -42,6 +42,7 @@ class JavaSymbolProvider(
             ShapeType.DOUBLE -> builder.name("Double").namespace("java.lang", ".")
             ShapeType.BYTE -> builder.name("Byte").namespace("java.lang", ".")
             ShapeType.BLOB -> builder.name("byte[]")
+            ShapeType.DOCUMENT -> builder.name("String").namespace("java.lang", ".")
             ShapeType.TIMESTAMP -> builder.name("Instant").namespace("java.time", ".")
             ShapeType.LIST -> {
                 val member = (shape as ListShape).member
