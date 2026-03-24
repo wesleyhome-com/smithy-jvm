@@ -10,7 +10,8 @@ import com.example.library.repository.ReservationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,7 +32,7 @@ public class ReservationService {
     }
 
     @Transactional
-    public Reservation reserve(String patronId, String resourceId, OffsetDateTime startTime, int duration) {
+    public Reservation reserve(String patronId, String resourceId, Instant startTime, int duration) {
         Patron patron = patronRepository.findById(patronId)
                 .map(patronMapper::toDomain)
                 .orElseThrow(() -> new RuntimeException("Patron not found"));
@@ -41,7 +42,7 @@ public class ReservationService {
         record.setId(id);
         record.setPatronId(patronId);
         record.setResourceId(resourceId);
-        record.setStartTime(startTime.toLocalDateTime());
+        record.setStartTime(startTime.atOffset(ZoneOffset.UTC).toLocalDateTime());
         record.setDurationMinutes(duration);
         record.setStatus(ReservationStatus.CONFIRMED.name());
 
@@ -60,7 +61,7 @@ public class ReservationService {
                         r.getId(), 
                         patron, 
                         r.getResourceId(), 
-                        OffsetDateTime.now(), // Simplified for example
+                        Instant.now(), // Simplified for example
                         r.getDurationMinutes(), 
                         ReservationStatus.valueOf(r.getStatus())))
                 .collect(Collectors.toList());

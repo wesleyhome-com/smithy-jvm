@@ -48,7 +48,7 @@ Your project needs Spring Web, Jakarta Validation, and Jackson annotations.
 {
   "version": "2.0",
   "plugins": {
-    "spring-delegate-generator": {
+    "java-spring-server": {
       "package": "com.example.library.generated",
       "useResponseEntity": false
     }

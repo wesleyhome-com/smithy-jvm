@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,7 +26,7 @@ class ReservationApiMapperTest {
     @Test
     void toReserveComputerOutputDTO_shouldMapCorrectly() {
         Patron patron = new Patron("P1", "John", "j@e.com", "555", MembershipStatus.ACTIVE);
-        Reservation domain = new Reservation("R1", patron, "Comp1", OffsetDateTime.now(), 60, ReservationStatus.CONFIRMED);
+        Reservation domain = new Reservation("R1", patron, "Comp1", Instant.now(), 60, ReservationStatus.CONFIRMED);
 
         ReserveComputerOutputDTO result = mapper.toReserveComputerOutputDTO(domain);
 
@@ -37,8 +37,8 @@ class ReservationApiMapperTest {
     @Test
     void toListReservationsOutputDTO_shouldMapListCorrectly() {
         Patron patron = new Patron("P1", "John", "j@e.com", "555", MembershipStatus.ACTIVE);
-        Reservation r1 = new Reservation("R1", patron, "Comp1", OffsetDateTime.now(), 60, ReservationStatus.CONFIRMED);
-        Reservation r2 = new Reservation("R2", patron, "Comp2", OffsetDateTime.now(), 30, ReservationStatus.CANCELLED);
+        Reservation r1 = new Reservation("R1", patron, "Comp1", Instant.now(), 60, ReservationStatus.CONFIRMED);
+        Reservation r2 = new Reservation("R2", patron, "Comp2", Instant.now(), 30, ReservationStatus.CANCELLED);
 
         ListReservationsOutputDTO result = mapper.toListReservationsOutputDTO(List.of(r1, r2));
 

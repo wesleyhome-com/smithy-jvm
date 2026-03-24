@@ -10,7 +10,9 @@ import com.example.library.repository.PatronRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -49,7 +51,7 @@ public class CirculationService {
         loanRecord.setId(loanId);
         loanRecord.setPatronId(patronId);
         loanRecord.setItemId(itemId);
-        loanRecord.setDueDate(OffsetDateTime.now().plusDays(14).toLocalDateTime());
+        loanRecord.setDueDate(Instant.now().plus(14, ChronoUnit.DAYS).atOffset(ZoneOffset.UTC).toLocalDateTime());
         loanRecord.setStatus(LoanStatus.ACTIVE.name());
         
         loanRepository.save(loanRecord);
@@ -73,7 +75,7 @@ public class CirculationService {
         }
 
         loanRecord.setStatus(LoanStatus.RETURNED.name());
-        loanRecord.setReturnedAt(OffsetDateTime.now().toLocalDateTime());
+        loanRecord.setReturnedAt(Instant.now().atOffset(ZoneOffset.UTC).toLocalDateTime());
         loanRepository.save(loanRecord);
 
         // Update item availability

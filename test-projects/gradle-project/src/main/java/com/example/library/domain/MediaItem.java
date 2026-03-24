@@ -1,6 +1,6 @@
 package com.example.library.domain;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 public sealed interface MediaItem permits MediaItem.Book,
         MediaItem.Cd,
@@ -21,19 +21,7 @@ public sealed interface MediaItem permits MediaItem.Book,
 
     int availableCopies();
 
-    default int getAvailableCopies() {
-        return availableCopies();
-    }
-
     int totalCopies();
-
-    default int getTotalCopies() {
-        return totalCopies();
-    }
-
-    default boolean isAvailable() {
-        return availableCopies() > 0;
-    }
 
     record Book(String id, String title, String author, String isbn,
                 Integer pages, int availableCopies, int totalCopies) implements
@@ -50,7 +38,7 @@ public sealed interface MediaItem permits MediaItem.Book,
     }
 
     record Magazine(String id, String title, String issueNumber,
-                    OffsetDateTime publishDate, int availableCopies,
+                    Instant publishDate, int availableCopies,
                     int totalCopies) implements MediaItem {
     }
 }

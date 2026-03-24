@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,14 +44,14 @@ class LoanDbMapperTest {
         assertThat(result.patron().id()).isEqualTo("P1");
         assertThat(result.item().id()).isEqualTo("M1");
         assertThat(result.status()).isEqualTo(LoanStatus.ACTIVE);
-        assertThat(result.dueDate()).isEqualTo(now.plusDays(7).atOffset(ZoneOffset.UTC));
+        assertThat(result.dueDate()).isEqualTo(now.plusDays(7).toInstant(ZoneOffset.UTC));
     }
 
     @Test
     void toRecord_shouldMapLoanToRecordCorrectly() {
         Patron patron = new Patron("P1", "John", "john@example.com", null, MembershipStatus.ACTIVE);
         MediaItem.Book book = new MediaItem.Book("M1", "Title", "Author", "ISBN", 100, 1, 1);
-        Loan loan = new Loan("L1", patron, book, OffsetDateTime.now(), null, LoanStatus.OVERDUE);
+        Loan loan = new Loan("L1", patron, book, Instant.now(), null, LoanStatus.OVERDUE);
 
         LoansRecord record = mapper.toRecord(loan);
 

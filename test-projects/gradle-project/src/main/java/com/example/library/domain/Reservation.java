@@ -1,16 +1,17 @@
 package com.example.library.domain;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 public record Reservation(
     String id,
     Patron patron,
     String resourceId,
-    OffsetDateTime startTime,
+    Instant startTime,
     int durationMinutes,
     ReservationStatus status
 ) {
-    public OffsetDateTime endTime() {
-        return startTime.plusMinutes(durationMinutes);
+    public Instant endTime() {
+        return startTime.plus(durationMinutes, ChronoUnit.MINUTES);
     }
 }

@@ -24,17 +24,17 @@ repositories {
 }
 
 dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-h2console")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     runtimeOnly("com.h2database:h2")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jdbc-test")
     testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jooq-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
@@ -43,8 +43,8 @@ dependencies {
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 
     // Smithy model dependencies
-    smithyBuild("com.example.smithy:generator:0.1.0-SNAPSHOT")
-    smithyBuild("com.example.smithy:smithy-traits:0.1.0-SNAPSHOT")
+    smithyBuild(project(":generator-spring-server"))
+    smithyBuild(project(":smithy-traits"))
 
     // JOOQ Code Gen dependencies
     jooqCodegen("org.jooq:jooq-meta-extensions:3.20.11")
@@ -95,7 +95,7 @@ smithy {
 
 sourceSets {
     main {
-        val srcPath = smithyOutput.dir("source/spring-delegate-generator/")
+        val srcPath = smithyOutput.dir("source/java-spring-server/")
         resources {
             srcDir("model")
             srcDir(srcPath)

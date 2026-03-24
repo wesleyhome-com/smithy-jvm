@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,7 +21,7 @@ class CirculationApiMapperTest {
     void toCheckOutItemOutputDTO_shouldMapLoanCorrectly() {
         Patron patron = new Patron("P1", "John", "j@e.com", "555", MembershipStatus.ACTIVE);
         MediaItem.Book item = new MediaItem.Book("B1", "Title", "Author", "ISBN", 100, 1, 1);
-        Loan loan = new Loan("L1", patron, item, OffsetDateTime.now(), null, LoanStatus.ACTIVE);
+        Loan loan = new Loan("L1", patron, item, Instant.now(), null, LoanStatus.ACTIVE);
 
         CheckOutItemOutputDTO result = mapper.toCheckOutItemOutputDTO(loan);
 
@@ -33,7 +33,7 @@ class CirculationApiMapperTest {
     void toLoanRecordDTO_shouldMapLoanCorrectly() {
         Patron patron = new Patron("P1", "John", "j@e.com", "555", MembershipStatus.ACTIVE);
         MediaItem.Book item = new MediaItem.Book("B1", "Title", "Author", "ISBN", 100, 1, 1);
-        Loan loan = new Loan("L1", patron, item, OffsetDateTime.now(), null, LoanStatus.ACTIVE);
+        Loan loan = new Loan("L1", patron, item, Instant.now(), null, LoanStatus.ACTIVE);
 
         LoanRecordDTO result = mapper.toLoanRecordDTO(loan);
 
