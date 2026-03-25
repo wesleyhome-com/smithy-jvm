@@ -17,9 +17,7 @@ import javax.lang.model.element.Modifier
 /**
  * Generates Spring Boot RestControllers for a Smithy ServiceShape, grouped by tags.
  */
-class JavaSpringControllerGenerator(
-    private val useResponseEntity: Boolean = true
-) : ShapeGenerator<ServiceShape> {
+class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
     override val shapeType: Class<ServiceShape> = ServiceShape::class.java
 
     private val springWeb = "org.springframework.web.bind.annotation"
@@ -29,6 +27,7 @@ class JavaSpringControllerGenerator(
     private val requestParam = ClassName.get(springWeb, "RequestParam")
     private val requestHeader = ClassName.get(springWeb, "RequestHeader")
     private val requestBody = ClassName.get(springWeb, "RequestBody")
+    private val responseEntity = ClassName.get("org.springframework.http", "ResponseEntity")
 
     override fun generate(shape: ServiceShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
         val validationEvents = mutableListOf<ValidationEvent>()
@@ -80,13 +79,11 @@ class JavaSpringControllerGenerator(
             val apiInterfaceType = ClassName.get(apiInterfacePackage, apiInterfaceName)
             val fieldName = StringUtils.uncapitalize(apiInterfaceName)
 
-            // Add Field - Why are you trying to look for fields?
-//            if (typeBuilder.fieldSpecs.none { it.name == fieldName }) {
-                typeBuilder.addField(FieldSpec.builder(apiInterfaceType, fieldName, Modifier.PRIVATE, Modifier.FINAL).build())
-                // Add Constructor Parameter
-                constructorBuilder.addParameter(apiInterfaceType, fieldName)
-                constructorBuilder.addStatement("this.\$L = \$L", fieldName, fieldName)
-//            }
+            // Add Field
+            typeBuilder.addField(FieldSpec.builder(apiInterfaceType, fieldName, Modifier.PRIVATE, Modifier.FINAL).build())
+            // Add Constructor Parameter
+            constructorBuilder.addParameter(apiInterfaceType, fieldName)
+            constructorBuilder.addStatement("this.\$L = \$L", fieldName, fieldName)
 
             // Add Controller Method
             val operationMethodName = StringUtils.uncapitalize(operation.id.name)
@@ -192,29 +189,34 @@ class JavaSpringControllerGenerator(
                     .joinToString(", ") { symbolProvider.toMemberName(it) }
             }.orElse("")
 
-            val responseEntity = ClassName.get("org.springframework.http", "ResponseEntity")
             val outputSymbol = if (operation.output.isPresent) {
                 symbolProvider.toSymbol(model.expectShape(operation.output.get()))
-            } else {
-                null
-            }
-            
+            } else null
+
             if (outputSymbol != null) {
                 val outputTypeName = outputSymbol.toTypeName()
-                if (useResponseEntity) {
-                    methodBuilder.returns(ParameterizedTypeName.get(responseEntity, outputTypeName))
-                } else {
-                    methodBuilder.returns(outputTypeName)
+                val outputShape = model.expectShape(operation.output.get(), StructureShape::class.java)
+                
+                methodBuilder.returns(ParameterizedTypeName.get(responseEntity, outputTypeName))
+                methodBuilder.addStatement("\$T result = \$L.\$L(\$L)", outputTypeName, fieldName, operationMethodName, callArgs)
+                
+                val builderChain = CodeBlock.builder().add("\$T.ok()", responseEntity)
+                
+                val (metadataMembers, _) = outputShape.getMetadataAndPayload()
+                for (member in metadataMembers.filter { it.hasTrait(HttpHeaderTrait::class.java) }) {
+                    val headerName = member.expectTrait(HttpHeaderTrait::class.java).value
+                    val getterName = symbolProvider.toMemberName(member)
+                    // DTO is a record, so we use getterName()
+                    builderChain.add("\n.header(\$S, \$T.valueOf(result.\$L()))", headerName, String::class.java, getterName)
                 }
-                methodBuilder.addStatement("return \$L.\$L(\$L)", fieldName, operationMethodName, callArgs)
+                
+                builderChain.add("\n.body(result)")
+                methodBuilder.addStatement("return \$L", builderChain.build())
+                
             } else {
-                if (useResponseEntity) {
-                    methodBuilder.returns(ParameterizedTypeName.get(responseEntity, ClassName.get("java.lang", "Void")))
-                    methodBuilder.addStatement("return \$L.\$L(\$L)", fieldName, operationMethodName, callArgs)
-                } else {
-                    methodBuilder.returns(TypeName.VOID)
-                    methodBuilder.addStatement("\$L.\$L(\$L)", fieldName, operationMethodName, callArgs)
-                }
+                methodBuilder.returns(ParameterizedTypeName.get(responseEntity, ClassName.get("java.lang", "Void")))
+                methodBuilder.addStatement("\$L.\$L(\$L)", fieldName, operationMethodName, callArgs)
+                methodBuilder.addStatement("return \$T.ok().build()", responseEntity)
             }
 
             typeBuilder.addMethod(methodBuilder.build())

@@ -15,10 +15,13 @@ public class JacksonJdkIntegrationTest extends BaseIntegrationTest {
     public void testSearchCatalog() throws IOException {
         LibraryServiceClient client = LibraryServiceClient.create(getBaseUrl());
         
-        SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0);
+        SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0, "integration-test");
         SearchCatalogOutputDTO response = client.searchCatalog(input);
 
         assertThat(response).isNotNull();
         assertThat(response.items()).isNotNull();
+        // total is now an @httpHeader
+        System.out.println("Total is: " + response.total());
+        assertThat(response.total()).isNotNull().isGreaterThanOrEqualTo(0L);
     }
 }

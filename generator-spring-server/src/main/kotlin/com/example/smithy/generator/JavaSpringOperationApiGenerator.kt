@@ -4,84 +4,106 @@ import com.palantir.javapoet.*
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.OperationShape
+import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.model.shapes.StructureShape
-import software.amazon.smithy.model.traits.DocumentationTrait
+import software.amazon.smithy.model.knowledge.TopDownIndex
 import software.amazon.smithy.utils.StringUtils
 import javax.lang.model.element.Modifier
 
 /**
- * Generates Java interfaces and stub implementations for Smithy OperationShapes.
+ * Generates Spring Boot API interfaces and default stubs for a Smithy ServiceShape.
  */
-class JavaSpringOperationApiGenerator(
-    private val useResponseEntity: Boolean = true
-) : ShapeGenerator<OperationShape> {
-    override val shapeType: Class<OperationShape> = OperationShape::class.java
+class JavaSpringOperationApiGenerator : ShapeGenerator<ServiceShape> {
+    override val shapeType: Class<ServiceShape> = ServiceShape::class.java
 
-    override fun generate(shape: OperationShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
-        val operationSymbol = symbolProvider.toSymbol(shape)
-        val interfaceName = operationSymbol.name
-        val packageName = operationSymbol.namespace
-        val interfaceType = ClassName.get(packageName, interfaceName)
+    private val jakartaValid = ClassName.get("jakarta.validation", "Valid")
+    private val httpStatus = ClassName.get("org.springframework.http", "HttpStatus")
+    private val responseStatusException = ClassName.get("org.springframework.web.server", "ResponseStatusException")
 
-        val interfaceFile = generateInterface(shape, model, symbolProvider, interfaceName, packageName)
-        val stubFile = generateStub(shape, model, symbolProvider, interfaceName, packageName, interfaceType)
-
-        return ShapeGenerator.Result(listOf(interfaceFile.toGeneratedFile(), stubFile.toGeneratedFile()))
-    }
-
-    private fun generateInterface(operation: OperationShape, model: Model, symbolProvider: SymbolProvider, name: String, packageName: String): JavaFile {
-        val typeBuilder = TypeSpec.interfaceBuilder(name)
-            .addModifiers(Modifier.PUBLIC)
-
-        operation.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
-            typeBuilder.addJavadoc("\$L\n", trait.value)
+    override fun generate(shape: ServiceShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
+        val generatedFiles = mutableListOf<GeneratedFile>()
+        
+        val topDownIndex = TopDownIndex.of(model)
+        val operations = topDownIndex.getContainedOperations(shape)
+        
+        for (operation in operations) {
+            val interfaceFile = generateApiInterface(operation, model, symbolProvider)
+            generatedFiles.add(interfaceFile.toGeneratedFile())
+            
+            val stubFile = generateApiStub(operation, model, symbolProvider)
+            generatedFiles.add(stubFile.toGeneratedFile())
         }
 
-        val methodBuilder = createMethodSignature(operation, model, symbolProvider)
-            .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+        return ShapeGenerator.Result(generatedFiles)
+    }
 
+    private fun generateApiInterface(operation: OperationShape, model: Model, symbolProvider: SymbolProvider): JavaFile {
+        val symbol = symbolProvider.toSymbol(operation)
+        val packageName = symbol.namespace
+        val interfaceName = symbol.name
+        
+        val typeBuilder = TypeSpec.interfaceBuilder(interfaceName)
+            .addModifiers(Modifier.PUBLIC)
+            
+        operation.getTrait(software.amazon.smithy.model.traits.DocumentationTrait::class.java).ifPresent { trait ->
+            typeBuilder.addJavadoc("\$L\n", trait.value)
+        }
+        
+        val methodBuilder = buildMethodSignature(operation, model, symbolProvider)
+        methodBuilder.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
         typeBuilder.addMethod(methodBuilder.build())
+
         return JavaFile.builder(packageName, typeBuilder.build()).build()
     }
 
-    private fun generateStub(operation: OperationShape, model: Model, symbolProvider: SymbolProvider, interfaceName: String, interfacePackage: String, interfaceType: ClassName): JavaFile {
+    private fun generateApiStub(operation: OperationShape, model: Model, symbolProvider: SymbolProvider): JavaFile {
+        val symbol = symbolProvider.toSymbol(operation)
+        val apiPackageName = symbol.namespace
+        val interfaceName = symbol.name
         val stubName = "${interfaceName}Stub"
-        val stubPackage = "$interfacePackage.stub"
+        val stubPackageName = "$apiPackageName.stub"
         
         val typeBuilder = TypeSpec.classBuilder(stubName)
             .addModifiers(Modifier.PUBLIC)
-            .addSuperinterface(interfaceType)
+            .addSuperinterface(ClassName.get(apiPackageName, interfaceName))
+            .addAnnotation(ClassName.get("org.springframework.stereotype", "Component"))
+            .addAnnotation(AnnotationSpec.builder(ClassName.get("org.springframework.boot.autoconfigure.condition", "ConditionalOnMissingBean"))
+                .addMember("value", "\$T.class", ClassName.get(apiPackageName, interfaceName))
+                .build())
+            .addJavadoc("Default implementation of {@link \$L} that returns 501 Not Implemented.\n", interfaceName)
 
-        val methodBuilder = createMethodSignature(operation, model, symbolProvider)
-            .addModifiers(Modifier.PUBLIC)
+        val methodBuilder = buildMethodSignature(operation, model, symbolProvider)
             .addAnnotation(Override::class.java)
-            .addStatement("throw new \$T(\$T.NOT_IMPLEMENTED, \$S)", 
-                ClassName.get("org.springframework.web.server", "ResponseStatusException"),
-                ClassName.get("org.springframework.http", "HttpStatus"),
-                "Operation ${operation.id.name} has not been implemented yet.")
-
+            .addModifiers(Modifier.PUBLIC)
+            .addStatement("throw new \$T(\$T.NOT_IMPLEMENTED, \"Operation \$L not implemented\")", 
+                responseStatusException, httpStatus, operation.id.name)
+        
         typeBuilder.addMethod(methodBuilder.build())
-        return JavaFile.builder(stubPackage, typeBuilder.build()).build()
+
+        return JavaFile.builder(stubPackageName, typeBuilder.build()).build()
     }
 
-    private fun createMethodSignature(operation: OperationShape, model: Model, symbolProvider: SymbolProvider): MethodSpec.Builder {
+    private fun buildMethodSignature(operation: OperationShape, model: Model, symbolProvider: SymbolProvider): MethodSpec.Builder {
         val methodName = StringUtils.uncapitalize(operation.id.name)
         val methodBuilder = MethodSpec.methodBuilder(methodName)
-
-        operation.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
-            methodBuilder.addJavadoc("\$L\n", trait.value)
+        
+        operation.getTrait(software.amazon.smithy.model.traits.DocumentationTrait::class.java).ifPresent { trait ->
+            methodBuilder.addJavadoc("\$L\n\n", trait.value)
         }
 
-        // Handle Input
+        // Map Input (Parameters)
         operation.input.ifPresent { inputId ->
             val inputShape = model.expectShape(inputId, StructureShape::class.java)
             val (metadataMembers, payloadMembers) = inputShape.getMetadataAndPayload()
-            
+
             for (member in metadataMembers) {
                 val memberSymbol = symbolProvider.toSymbol(member)
                 val paramName = symbolProvider.toMemberName(member)
-                methodBuilder.addParameter(memberSymbol.toTypeName(), paramName)
-                member.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
+                methodBuilder.addParameter(ParameterSpec.builder(memberSymbol.toTypeName(), paramName)
+                    .addAnnotation(jakartaValid)
+                    .build())
+                
+                member.getTrait(software.amazon.smithy.model.traits.DocumentationTrait::class.java).ifPresent { trait ->
                     methodBuilder.addJavadoc("@param \$L \$L\n", paramName, trait.value)
                 }
             }
@@ -90,34 +112,23 @@ class JavaSpringOperationApiGenerator(
                 val member = payloadMembers[0]
                 val memberSymbol = symbolProvider.toSymbol(member)
                 val paramName = symbolProvider.toMemberName(member)
-                methodBuilder.addParameter(memberSymbol.toTypeName(), paramName)
-                member.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
+                methodBuilder.addParameter(ParameterSpec.builder(memberSymbol.toTypeName(), paramName)
+                    .addAnnotation(jakartaValid)
+                    .build())
+                    
+                member.getTrait(software.amazon.smithy.model.traits.DocumentationTrait::class.java).ifPresent { trait ->
                     methodBuilder.addJavadoc("@param \$L \$L\n", paramName, trait.value)
                 }
             }
         }
 
-        // Handle Output
-        val outputSymbol = if (operation.output.isPresent) {
-            symbolProvider.toSymbol(model.expectShape(operation.output.get()))
+        // Map Output (Return Type)
+        if (operation.output.isPresent) {
+            val outputSymbol = symbolProvider.toSymbol(model.expectShape(operation.output.get()))
+            methodBuilder.returns(outputSymbol.toTypeName())
+            methodBuilder.addJavadoc("@return \$T\n", outputSymbol.toTypeName())
         } else {
-            null
-        }
-        
-        val responseEntity = ClassName.get("org.springframework.http", "ResponseEntity")
-        if (outputSymbol != null) {
-            val outputTypeName = outputSymbol.toTypeName()
-            if (useResponseEntity) {
-                methodBuilder.returns(ParameterizedTypeName.get(responseEntity, outputTypeName))
-            } else {
-                methodBuilder.returns(outputTypeName)
-            }
-        } else {
-            if (useResponseEntity) {
-                methodBuilder.returns(ParameterizedTypeName.get(responseEntity, ClassName.get("java.lang", "Void")))
-            } else {
-                methodBuilder.returns(TypeName.VOID)
-            }
+            methodBuilder.returns(TypeName.VOID)
         }
 
         return methodBuilder

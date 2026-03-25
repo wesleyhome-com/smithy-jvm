@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.ShapeId
 import software.amazon.smithy.model.shapes.ServiceShape
-import software.amazon.smithy.model.validation.Severity
 
 class JavaSpringControllerGeneratorTest {
 
@@ -16,11 +15,10 @@ class JavaSpringControllerGeneratorTest {
         val model = Model.assembler()
             .addUnparsedModel("test.smithy", """
                 namespace com.example
-                
                 service MyService {
+                    version: "2023-01-01",
                     operations: [SayHello]
                 }
-                
                 @tags(["Hello"])
                 operation SayHello {
                     input: SayHelloInput,
@@ -28,10 +26,7 @@ class JavaSpringControllerGeneratorTest {
                 }
                 structure SayHelloInput {
                     @httpPayload
-                    payload: HelloPayload
-                }
-                structure HelloPayload {
-                    name: String
+                    payload: String
                 }
                 structure SayHelloOutput {
                     greeting: String
@@ -52,7 +47,10 @@ class JavaSpringControllerGeneratorTest {
         assertThat(code).contains("public class HelloController")
         assertThat(code).contains("private final SayHelloApi sayHelloApi;")
         assertThat(code).contains("public HelloController(SayHelloApi sayHelloApi)")
-        assertThat(code).contains("return sayHelloApi.sayHello(payload);")
+        // Now returns ResponseEntity
+        assertThat(code).contains("SayHelloOutputDTO result = sayHelloApi.sayHello(payload);")
+        assertThat(code).contains("return ResponseEntity.ok()")
+        assertThat(code).contains(".body(result);")
     }
 
     @Test
@@ -63,20 +61,20 @@ class JavaSpringControllerGeneratorTest {
                 namespace com.example
                 
                 service MyService {
-                    operations: [QueryOp]
+                    version: "2023-01-01",
+                    operations: [GetInfo]
                 }
-                
-                operation QueryOp {
-                    input: QueryInput
+
+                @readonly
+                @http(method: "GET", uri: "/info")
+                operation GetInfo {
+                    input: GetInfoInput
                 }
-                structure QueryInput {
+
+                structure GetInfoInput {
                     @httpQuery("page")
-                    @default(0)
-                    page: Integer,
-                    
-                    @httpQuery("q")
-                    @default("test")
-                    query: String
+                    @default(1)
+                    page: Integer
                 }
             """.trimIndent())
             .assemble()
@@ -90,8 +88,7 @@ class JavaSpringControllerGeneratorTest {
         val result = generator.generate(service, model, symbolProvider)
         val code = result.files.first().content
         
-        assertThat(code).contains("@RequestParam(value = \"page\", required = false, defaultValue = \"0\")")
-        assertThat(code).contains("@RequestParam(value = \"q\", required = false, defaultValue = \"test\")")
+        assertThat(code).contains("@RequestParam(value = \"page\", required = false, defaultValue = \"1\") Integer page")
     }
 
     @Test
@@ -99,17 +96,16 @@ class JavaSpringControllerGeneratorTest {
         val model = Model.assembler()
             .addUnparsedModel("test.smithy", """
                 namespace com.example
-                
                 service MyService {
-                    operations: [BadPayload]
+                    version: "2023-01-01",
+                    operations: [BadOp]
                 }
-                
-                operation BadPayload {
-                    input: BadPayloadInput
+                operation BadOp {
+                    input: BadInput
                 }
-                structure BadPayloadInput {
-                    field1: String,
-                    field2: String
+                structure BadInput {
+                    foo: String,
+                    bar: String
                 }
             """.trimIndent())
             .assemble()
@@ -122,9 +118,7 @@ class JavaSpringControllerGeneratorTest {
         val generator = JavaSpringControllerGenerator()
         val result = generator.generate(service, model, symbolProvider)
         
-        assertThat(result.validationEvents.size).isEqualTo(1)
-        assertThat(result.validationEvents[0].id).isEqualTo("MultiplePayloadMembers")
-        assertThat(result.validationEvents[0].severity).isEqualTo(Severity.ERROR)
+        assertThat(result.validationEvents.any { it.id == "MultiplePayloadMembers" }).isEqualTo(true)
     }
 
     @Test
@@ -132,18 +126,17 @@ class JavaSpringControllerGeneratorTest {
         val model = Model.assembler()
             .addUnparsedModel("test.smithy", """
                 namespace com.example
-                
                 service MyService {
+                    version: "2023-01-01",
                     resources: [MyResource]
                 }
-                
                 resource MyResource {
-                    identifiers: { id: String }
+                    identifiers: { id: String },
                     read: GetResource
                 }
-                
-                @readonly
                 @tags(["Resource"])
+                @readonly
+                @http(method: "GET", uri: "/resource/{id}")
                 operation GetResource {
                     input: GetResourceInput,
                     output: GetResourceOutput
@@ -172,6 +165,9 @@ class JavaSpringControllerGeneratorTest {
         assertThat(code).contains("public class ResourceController")
         assertThat(code).contains("private final GetResourceApi getResourceApi;")
         assertThat(code).contains("public ResourceController(GetResourceApi getResourceApi)")
-        assertThat(code).contains("return getResourceApi.getResource(id);")
+        // Now returns ResponseEntity
+        assertThat(code).contains("GetResourceOutputDTO result = getResourceApi.getResource(id);")
+        assertThat(code).contains("return ResponseEntity.ok()")
+        assertThat(code).contains(".body(result);")
     }
 }

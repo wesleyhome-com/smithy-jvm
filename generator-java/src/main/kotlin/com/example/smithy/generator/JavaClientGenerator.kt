@@ -358,17 +358,22 @@ class JavaClientGenerator(
 
             val queryMembers = metadataMembers.filter { it.hasTrait(HttpQueryTrait::class.java) }
             if (queryMembers.isNotEmpty()) {
-                implMethod.addStatement("StringBuilder query = new StringBuilder()")
-                for (member in queryMembers) {
+                val streamArgs = queryMembers.map { member ->
                     val queryTrait = member.expectTrait(HttpQueryTrait::class.java)
                     val memberName = symbolProvider.toMemberName(member)
-                    implMethod.beginControlFlow("if (input.\$L() != null)", memberName)
-                    implMethod.addStatement("query.append(query.length() == 0 ? \"?\" : \"&\")")
-                    implMethod.addStatement("query.append(\$S).append(\"=\").append(input.\$L())", 
-                        queryTrait.value, memberName)
-                    implMethod.endControlFlow()
-                }
-                implMethod.addStatement("uri += query.toString()")
+                    "input.$memberName() != null ? \"${queryTrait.value}=\" + input.$memberName() : null"
+                }.joinToString(",\n")
+
+                implMethod.addStatement("String queryParams = \$T.of(\n\$L\n)\n.filter(\$T::nonNull)\n.collect(\$T.joining(\"&\"))",
+                    java.util.stream.Stream::class.java,
+                    streamArgs,
+                    java.util.Objects::class.java,
+                    java.util.stream.Collectors::class.java
+                )
+                
+                implMethod.beginControlFlow("if (!queryParams.isEmpty())")
+                implMethod.addStatement("uri += \"?\" + queryParams")
+                implMethod.endControlFlow()
             }
 
             if (payloadMembers.size == 1) {
@@ -383,16 +388,68 @@ class JavaClientGenerator(
             implMethod.addStatement("byte[] body = new byte[0]")
         }
 
+        // Headers
         implMethod.addStatement("\$T<\$T, \$T<\$T>> headers = new \$T<>()", 
             java.util.Map::class.java, String::class.java, java.util.List::class.java, String::class.java, java.util.HashMap::class.java)
-        implMethod.addStatement("headers.put(\$S, \$T.asList(\$S))", "Content-Type", java.util.Arrays::class.java, "application/json")
+        implMethod.addStatement("headers.put(\$S, \$T.of(\$S))", "Content-Type", java.util.List::class.java, "application/json")
+
+        // Input Headers
+        operation.input.ifPresent { inputId ->
+            val inputShape = model.expectShape(inputId, StructureShape::class.java)
+            val (metadataMembers, _) = inputShape.getMetadataAndPayload()
+            for (member in metadataMembers.filter { it.hasTrait(HttpHeaderTrait::class.java) }) {
+                val headerTrait = member.expectTrait(HttpHeaderTrait::class.java)
+                val memberName = symbolProvider.toMemberName(member)
+                implMethod.beginControlFlow("if (input.\$L() != null)", memberName)
+                implMethod.addStatement("headers.put(\$S, \$T.of(String.valueOf(input.\$L())))", 
+                    headerTrait.value, java.util.List::class.java, memberName)
+                implMethod.endControlFlow()
+            }
+        }
 
         implMethod.addStatement("HttpRequest request = new HttpRequest(\$S, uri, headers, body)", httpTrait.method.uppercase())
         implMethod.addStatement("HttpResponse response = transport.execute(request)")
 
         implMethod.beginControlFlow("if (response.statusCode() >= 200 && response.statusCode() < 300)")
         if (outputSymbol != null) {
-            implMethod.addStatement("return codec.deserialize(response.body(), \$T.class)", outputType)
+            val outputShape = model.expectShape(operation.output.get(), StructureShape::class.java)
+            val (metadataMembers, payloadMembers) = outputShape.getMetadataAndPayload()
+            
+            if (metadataMembers.any { it.hasTrait(HttpHeaderTrait::class.java) }) {
+                implMethod.addStatement("\$T baseOutput = codec.deserialize(response.body(), \$T.class)", outputType, outputType)
+                
+                // Extract headers and call constructor with all fields
+                val constructorArgs = mutableListOf<String>()
+                for (member in outputShape.allMembers.values) {
+                    val memberName = symbolProvider.toMemberName(member)
+                    if (member.hasTrait(HttpHeaderTrait::class.java)) {
+                        val headerTrait = member.expectTrait(HttpHeaderTrait::class.java)
+                        val memberSymbol = symbolProvider.toSymbol(member)
+                        val typeName = memberSymbol.toTypeName()
+                        
+                        // We define a local variable for the header
+                        implMethod.addStatement("\$T \$L = null", typeName, memberName)
+                        implMethod.beginControlFlow("if (response.headers().containsKey(\$S))", headerTrait.value)
+                        implMethod.addStatement("String headerValue = response.headers().get(\$S).get(0)", headerTrait.value)
+                        
+                        // Handle simple type conversion
+                        if (typeName == TypeName.LONG || typeName == ClassName.get("java.lang", "Long")) {
+                            implMethod.addStatement("\$L = \$T.parseLong(headerValue)", memberName, Long::class.javaObjectType)
+                        } else if (typeName == TypeName.INT || typeName == ClassName.get("java.lang", "Integer")) {
+                            implMethod.addStatement("\$L = \$T.parseInt(headerValue)", memberName, Integer::class.javaObjectType)
+                        } else {
+                            implMethod.addStatement("\$L = headerValue", memberName)
+                        }
+                        implMethod.endControlFlow()
+                        constructorArgs.add(memberName)
+                    } else {
+                        constructorArgs.add("baseOutput.$memberName()")
+                    }
+                }
+                implMethod.addStatement("return new \$T(\$L)", outputType, constructorArgs.joinToString(", "))
+            } else {
+                implMethod.addStatement("return codec.deserialize(response.body(), \$T.class)", outputType)
+            }
         } else {
             implMethod.addStatement("return")
         }

@@ -19,7 +19,7 @@ public class OkHttpJacksonIntegrationTest
     {
         LibraryServiceClient client = LibraryServiceClient.create(getBaseUrl());
 
-        SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0);
+        SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0, "integration-test");
         SearchCatalogOutputDTO response = client.searchCatalog(input);
 
         assertThat(response).isNotNull();

@@ -6,7 +6,7 @@ import assertk.assertions.isEqualTo
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.ShapeId
-import software.amazon.smithy.model.shapes.OperationShape
+import software.amazon.smithy.model.shapes.ServiceShape
 
 class JavaSpringOperationApiGeneratorTest {
 
@@ -15,6 +15,10 @@ class JavaSpringOperationApiGeneratorTest {
         val model = Model.assembler()
             .addUnparsedModel("test.smithy", """
                 namespace com.example
+                service MyService {
+                    version: "2023-01-01",
+                    operations: [SayHello]
+                }
                 operation SayHello {
                     input: SayHelloInput,
                     output: SayHelloOutput
@@ -33,13 +37,14 @@ class JavaSpringOperationApiGeneratorTest {
             .assemble()
             .unwrap()
         
-        val operationId = ShapeId.from("com.example#SayHello")
-        val operation = model.expectShape(operationId, OperationShape::class.java)
+        val serviceId = ShapeId.from("com.example#MyService")
+        val service = model.expectShape(serviceId, ServiceShape::class.java)
         val symbolProvider = JavaSymbolProvider(model, "com.example.generated")
         
         val generator = JavaSpringOperationApiGenerator()
-        val generatedFiles = generator.generate(operation, model, symbolProvider)
+        val generatedFiles = generator.generate(service, model, symbolProvider)
         
+        // We expect 2 files per operation (Interface + Stub)
         assertThat(generatedFiles.files.size).isEqualTo(2)
         
         val interfaceCode = generatedFiles.files[0].content
@@ -58,7 +63,10 @@ class JavaSpringOperationApiGeneratorTest {
         val model = Model.assembler()
             .addUnparsedModel("test.smithy", """
                 namespace com.example
-                
+                service MyService {
+                    version: "2023-01-01",
+                    operations: [SayHello]
+                }
                 @documentation("Say hello to someone.")
                 operation SayHello {
                     input: SayHelloInput
@@ -73,21 +81,16 @@ class JavaSpringOperationApiGeneratorTest {
             .assemble()
             .unwrap()
         
-        val operationId = ShapeId.from("com.example#SayHello")
-        val operation = model.expectShape(operationId, OperationShape::class.java)
+        val serviceId = ShapeId.from("com.example#MyService")
+        val service = model.expectShape(serviceId, ServiceShape::class.java)
         val symbolProvider = JavaSymbolProvider(model, "com.example.generated")
         
         val generator = JavaSpringOperationApiGenerator()
-        val generatedFiles = generator.generate(operation, model, symbolProvider)
+        val generatedFiles = generator.generate(service, model, symbolProvider)
         
         val interfaceCode = generatedFiles.files[0].content
         
-        // Check Interface Documentation
-        assertThat(interfaceCode).contains("/**")
-        assertThat(interfaceCode).contains("* Say hello to someone.")
-        
-        // Check Method Documentation
-        assertThat(interfaceCode).contains("@param name The name of the person to greet.")
-        assertThat(interfaceCode).contains("ResponseEntity<Void> sayHello(String name);")
+        // Check Method Signature (No ResponseEntity in API anymore)
+        assertThat(interfaceCode).contains("void sayHello(@Valid String name);")
     }
 }

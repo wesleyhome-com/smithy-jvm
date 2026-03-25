@@ -207,6 +207,10 @@ structure SearchCatalogInput {
     @range(min: 0)
     @default(0)
     page: Integer
+
+    @documentation("The source of the search request.")
+    @httpHeader("X-Search-Source")
+    source: String
 }
 
 @documentation("The output shape for SearchCatalog operation.")
@@ -218,6 +222,7 @@ structure SearchCatalogOutput {
 
     @documentation("The total number of results found.")
     @required
+    @httpHeader("X-Total-Results")
     total: Long
 }
 

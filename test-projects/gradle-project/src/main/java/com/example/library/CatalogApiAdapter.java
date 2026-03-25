@@ -33,7 +33,7 @@ public class CatalogApiAdapter implements GetMediaApi, SearchCatalogApi, AddMedi
     }
 
     @Override
-    public SearchCatalogOutputDTO searchCatalog(String q, MediaTypeDTO type, Integer page) {
+    public SearchCatalogOutputDTO searchCatalog(String q, MediaTypeDTO type, Integer page, String source) {
         var items = mediaService.searchCatalog(q, type != null ? type.name() : null, page != null ? page : 0, 20);
         var apiItems = items.stream().map(apiMapper::toApi).collect(Collectors.toList());
         return new SearchCatalogOutputDTO(apiItems, (long) apiItems.size());
