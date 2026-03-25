@@ -1,1 +1,2 @@
 com.example.smithy.generator.JavaModelCodegenPlugin
+com.example.smithy.generator.JavaClientCodegenPlugin

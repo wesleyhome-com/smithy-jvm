@@ -1,10 +1,32 @@
 {
   "version": "2.0",
-  "plugins": {
-    "java-spring-server": {
-      "service": "com.example.library#LibraryService",
-      "package": "com.example.library.generated",
-      "useResponseEntity": false
+  "projections": {
+    "model_only": {
+      "plugins": {
+        "java-model": {
+          "service": "com.example.library#LibraryService",
+          "package": "com.example.library.model",
+          "dtoSuffix": ""
+        }
+      }
+    },
+    "client_only": {
+      "plugins": {
+        "java-client": {
+          "service": "com.example.library#LibraryService",
+          "package": "com.example.library.client",
+          "dtoSuffix": "DTO"
+        }
+      }
+    },
+    "full_server": {
+      "plugins": {
+        "java-spring-server": {
+          "service": "com.example.library#LibraryService",
+          "package": "com.example.library.generated",
+          "useResponseEntity": false
+        }
+      }
     }
   }
 }
