@@ -124,6 +124,35 @@ sourceSets {
             srcDir(generatedDirectory.dir("jooq"))
         }
     }
+    create("it") {
+        compileClasspath += main.get().output + test.get().output
+        runtimeClasspath += main.get().output + test.get().output
+        java {
+            srcDir("src/it/java")
+        }
+    }
+}
+
+val itImplementation: Configuration by configurations.getting {
+    extendsFrom(configurations.testImplementation.get())
+}
+val itRuntimeOnly: Configuration by configurations.getting {
+    extendsFrom(configurations.testRuntimeOnly.get())
+}
+
+val integrationTest = tasks.register<Test>("integrationTest") {
+    description = "Runs integration tests."
+    group = "verification"
+
+    testClassesDirs = sourceSets["it"].output.classesDirs
+    classpath = sourceSets["it"].runtimeClasspath
+    mustRunAfter(tasks.test)
+
+    useJUnitPlatform()
+}
+
+tasks.check {
+    dependsOn(integrationTest)
 }
 
 tasks.processResources {
