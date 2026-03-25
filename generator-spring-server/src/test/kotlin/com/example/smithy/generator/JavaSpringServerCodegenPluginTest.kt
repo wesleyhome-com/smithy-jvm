@@ -44,6 +44,7 @@ class JavaSpringServerCodegenPluginTest {
         val manifest = MockManifest(tempDir)
         val settings = Node.objectNodeBuilder()
             .withMember("package", "com.example.generated")
+            .withMember("service", "com.example#MyService")
             .build()
             
         val context = PluginContext.builder()
@@ -78,9 +79,15 @@ class JavaSpringServerCodegenPluginTest {
                 @tags(["Admin"])
                 operation AdminOp {
                     input: AdminInput
+                    output: AdminOutput
                 }
                 @tags(["Admin"])
                 structure AdminInput {
+                    @httpPayload
+                    payload: String
+                }
+                @tags(["Admin"])
+                structure AdminOutput {
                     @httpPayload
                     payload: String
                 }
@@ -91,6 +98,7 @@ class JavaSpringServerCodegenPluginTest {
         val manifest = MockManifest(tempDir)
         val settings = Node.objectNodeBuilder()
             .withMember("package", "com.example.generated")
+            .withMember("service", "com.example#MyService")
             .build()
             
         val context = PluginContext.builder()
@@ -104,7 +112,7 @@ class JavaSpringServerCodegenPluginTest {
         
         // Check tagged locations
         assertThat(manifest.hasFile("com/example/generated/api/admin/AdminOpApi.java")).isTrue()
-        assertThat(manifest.hasFile("com/example/generated/model/admin/AdminInputDTO.java")).isTrue()
+        assertThat(manifest.hasFile("com/example/generated/model/admin/AdminOpInputDTO.java")).isTrue()
         assertThat(manifest.hasFile("com/example/generated/controller/AdminController.java")).isTrue()
     }
 }

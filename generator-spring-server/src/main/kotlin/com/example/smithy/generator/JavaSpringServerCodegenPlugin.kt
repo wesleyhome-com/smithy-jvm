@@ -3,8 +3,14 @@ package com.example.smithy.generator
 import java.util.logging.Logger
 import software.amazon.smithy.build.PluginContext
 import software.amazon.smithy.build.SmithyBuildPlugin
+import software.amazon.smithy.codegen.core.ReservedWordSymbolProvider
+import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
+import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.model.shapes.Shape
+import software.amazon.smithy.model.shapes.ShapeId
+import software.amazon.smithy.model.neighbor.Walker
+import software.amazon.smithy.model.transform.ModelTransformer
 import software.amazon.smithy.model.validation.ValidatedResultException
 import software.amazon.smithy.model.validation.ValidationEvent
 
@@ -20,16 +26,41 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
 
     override fun execute(context: PluginContext) {
         LOGGER.info("Executing Spring Delegate Generator Plugin")
-        val model = context.model
+        var model = context.model
         val settings = context.settings
         val manifest = context.fileManifest
+
+        // 1. Resolve Target Service
+        val serviceString = settings.getStringMember("service").orElseThrow {
+            IllegalArgumentException("Missing required 'service' configuration in smithy-build.json")
+        }.value
+        val serviceId = ShapeId.from(serviceString)
+        var serviceShape = model.expectShape(serviceId, ServiceShape::class.java)
+
+        // 2. Transform Model: Ensure dedicated inputs/outputs
+        val transformer = ModelTransformer.create()
+        model = transformer.createDedicatedInputAndOutput(model, "Input", "Output")
+        
+        // Re-resolve the service shape against the newly transformed model
+        serviceShape = model.expectShape(serviceId, ServiceShape::class.java)
+
+        // 3. Compute Service Closure
+        val walker = Walker(model)
+        val shapeClosure = walker.walkShapes(serviceShape)
 
         val basePackage = settings.getStringMember("package").map { it.value }.orElse("com.example.generated")
         val useResponseEntity = settings.getBooleanMemberOrDefault("useResponseEntity", true)
         val dtoSuffix = settings.getStringMember("dtoSuffix").map { it.value }.orElse("DTO")
-        val symbolProvider = JavaSymbolProvider(model, basePackage, dtoSuffix)
+        
+        // Pass the serviceShape to our SymbolProvider so it handles renames
+        val baseSymbolProvider = JavaSymbolProvider(model, basePackage, dtoSuffix, serviceShape)
+        val symbolProvider = ReservedWordSymbolProvider.builder()
+            .symbolProvider(baseSymbolProvider)
+            .nameReservedWords(JavaReservedWords)
+            .memberReservedWords(JavaReservedWords)
+            .build()
 
-        // 1. Register active strategies for this plugin execution
+        // 4. Register active strategies for this plugin execution
         val strategies = listOf(
             JavaStructureGenerator(),
             JavaExceptionGenerator(),
@@ -44,8 +75,8 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
         val validationEvents = mutableListOf<ValidationEvent>()
         val generatedFiles = mutableListOf<GeneratedFile>()
 
-        // 2. The Engine Pipeline: Iterate over every shape in the model
-        model.shapes().forEach { shape ->
+        // 5. The Engine Pipeline: Iterate over shapes within the service closure
+        shapeClosure.forEach { shape ->
             // Skip Smithy internal shapes
             if (shape.id.namespace == "smithy.api") return@forEach
 
@@ -63,12 +94,12 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
             }
         }
 
-        // 3. Validation Phase
+        // 6. Validation Phase
         if (validationEvents.any { it.severity == software.amazon.smithy.model.validation.Severity.ERROR }) {
             throw ValidatedResultException(validationEvents)
         }
 
-        // 4. Commit Phase: Write files to disk
+        // 7. Commit Phase: Write files to disk
         for (file in generatedFiles) {
             manifest.writeFile(file.path, file.content)
         }
@@ -82,8 +113,6 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
         val fullClassName = "$configPackage.$configClassName"
         
         // We write the imports only if we generated at least one file. 
-        // Note: In Phase 1, we might write this even if no service existed. 
-        // To be safe, let's only write it if we actually generated the fallback config.
         if (generatedFiles.any { it.path.endsWith("$configClassName.java") }) {
             manifest.writeFile(importsPath, fullClassName + "\n")
         }
@@ -93,7 +122,7 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
         strategy: ShapeGenerator<T>,
         shape: Shape,
         model: Model,
-        symbolProvider: JavaSymbolProvider
+        symbolProvider: SymbolProvider
     ): ShapeGenerator.Result {
         return strategy.generate(shape as T, model, symbolProvider)
     }

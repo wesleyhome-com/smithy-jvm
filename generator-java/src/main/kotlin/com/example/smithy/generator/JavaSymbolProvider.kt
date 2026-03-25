@@ -12,7 +12,8 @@ import software.amazon.smithy.utils.StringUtils
 class JavaSymbolProvider(
     private val model: Model, 
     private val basePackage: String,
-    private val dtoSuffix: String = "DTO"
+    private val dtoSuffix: String = "DTO",
+    private val serviceShape: ServiceShape? = null
 ) : SymbolProvider {
 
     override fun toSymbol(shape: Shape): Symbol {
@@ -24,11 +25,14 @@ class JavaSymbolProvider(
         }
 
         val tagSuffix = getTagSuffix(shape)
+        // Use service shape for safe renames if available
+        val shapeName = if (serviceShape != null) shape.id.getName(serviceShape) else shape.id.name
+        val capitalizedName = StringUtils.capitalize(shapeName)
         
         when (shape.type) {
             ShapeType.STRING -> {
                 if (shape.hasTrait(EnumTrait::class.java)) {
-                    val name = StringUtils.capitalize(shape.id.name) + dtoSuffix
+                    val name = capitalizedName + dtoSuffix
                     builder.name(name).namespace("$basePackage.model$tagSuffix", ".")
                 } else {
                     builder.name("String").namespace("java.lang", ".")
@@ -62,23 +66,22 @@ class JavaSymbolProvider(
             }
             ShapeType.STRUCTURE, ShapeType.UNION, ShapeType.ENUM -> {
                 val name = if (shape.hasTrait(software.amazon.smithy.model.traits.ErrorTrait::class.java)) {
-                    StringUtils.capitalize(shape.id.name)
+                    capitalizedName
                 } else {
-                    StringUtils.capitalize(shape.id.name) + dtoSuffix
+                    capitalizedName + dtoSuffix
                 }
                 builder.name(name).namespace("$basePackage.model$tagSuffix", ".")
             }
             ShapeType.INT_ENUM -> {
-                val name = StringUtils.capitalize(shape.id.name) + dtoSuffix
+                val name = capitalizedName + dtoSuffix
                 builder.name(name).namespace("$basePackage.model$tagSuffix", ".")
             }
             ShapeType.OPERATION -> {
-                val name = StringUtils.capitalize(shape.id.name) + "Api"
+                val name = capitalizedName + "Api"
                 builder.name(name).namespace("$basePackage.api$tagSuffix", ".")
             }
             ShapeType.SERVICE -> {
-                val name = StringUtils.capitalize(shape.id.name)
-                builder.name(name).namespace(basePackage, ".")
+                builder.name(capitalizedName).namespace(basePackage, ".")
             }
             else -> builder.name("Object").namespace("java.lang", ".")
         }
