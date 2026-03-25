@@ -50,7 +50,6 @@ dependencies {
 
     // Smithy model dependencies
     smithyBuild(project(":generator-spring-server"))
-    smithyBuild(project(":smithy-traits"))
 
     // JOOQ Code Gen dependencies
     jooqCodegen("org.jooq:jooq-meta-extensions:3.20.11")

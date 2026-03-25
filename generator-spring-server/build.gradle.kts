@@ -15,9 +15,6 @@ dependencies {
     // JavaPoet for clean Java code generation
     implementation(libs.javapoet)
 
-    // Reference to our custom traits module
-    implementation(project(":smithy-traits"))
-
     // Unit testing for the generator
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
