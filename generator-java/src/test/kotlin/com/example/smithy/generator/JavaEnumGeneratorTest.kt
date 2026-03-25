@@ -2,6 +2,7 @@ package com.example.smithy.generator
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.isFalse
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.EnumShape
@@ -144,5 +145,33 @@ class JavaEnumGeneratorTest {
         
         // Check fromValue logic
         assertThat(code).contains("return UNKNOWN_TO_SDK_VERSION;")
+    }
+
+    @Test
+    fun `respects serializationLibrary setting`() {
+        val model = Model.assembler()
+            .addUnparsedModel("test.smithy", """
+                ${'$'}version: "2"
+                namespace com.example
+                enum Status {
+                    ACTIVE = "active"
+                }
+            """.trimIndent())
+            .assemble()
+            .unwrap()
+        
+        val shapeId = ShapeId.from("com.example#Status")
+        val shape = model.expectShape(shapeId)
+        val symbolProvider = JavaSymbolProvider(model, "com.example.generated")
+        
+        // Case 1: Jackson (Default)
+        val jacksonCode = JavaEnumGenerator("jackson").generate(shape, model, symbolProvider).files.first().content
+        assertThat(jacksonCode).contains("@JsonValue")
+        assertThat(jacksonCode).contains("@JsonCreator")
+        
+        // Case 2: None
+        val noneCode = JavaEnumGenerator("none").generate(shape, model, symbolProvider).files.first().content
+        assertThat(noneCode.contains("@JsonValue")).isFalse()
+        assertThat(noneCode.contains("@JsonCreator")).isFalse()
     }
 }

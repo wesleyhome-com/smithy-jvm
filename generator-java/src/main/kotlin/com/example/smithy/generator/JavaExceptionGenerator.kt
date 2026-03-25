@@ -10,7 +10,9 @@ import javax.lang.model.element.Modifier
 /**
  * Generates a Java exception for a Smithy StructureShape with the @error trait.
  */
-class JavaExceptionGenerator : ShapeGenerator<StructureShape> {
+class JavaExceptionGenerator(
+    private val serializationLibrary: String = "jackson"
+) : ShapeGenerator<StructureShape> {
     override val shapeType: Class<StructureShape> = StructureShape::class.java
 
     override fun generate(shape: StructureShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
@@ -43,8 +45,8 @@ class JavaExceptionGenerator : ShapeGenerator<StructureShape> {
                 .build())
         }
 
-        // Add Constructor
-        val constructorBuilder = MethodSpec.constructorBuilder()
+        // Add Standard Constructor
+        val standardConstructor = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
             .addParameter(String::class.java, "message")
 
@@ -54,21 +56,31 @@ class JavaExceptionGenerator : ShapeGenerator<StructureShape> {
             val memberSymbol = symbolProvider.toSymbol(member)
             val fieldName = symbolProvider.toMemberName(member)
             val typeName = memberSymbol.toTypeName()
-            constructorBuilder.addParameter(typeName, fieldName)
+            standardConstructor.addParameter(typeName, fieldName)
         }
 
-        constructorBuilder.addStatement("super(message)")
+        standardConstructor.addStatement("super(message)")
         for (member in shape.allMembers.values) {
             if (member.memberName.equals("message", ignoreCase = true)) continue
             
             val fieldName = symbolProvider.toMemberName(member)
-            constructorBuilder.addStatement("this.\$L = \$L", fieldName, fieldName)
+            standardConstructor.addStatement("this.\$L = \$L", fieldName, fieldName)
         }
         
-        typeBuilder.addMethod(constructorBuilder.build())
+        typeBuilder.addMethod(standardConstructor.build())
 
         // Add DTO support for clean serialization
         generateDtoSupport(typeBuilder, className, shape, symbolProvider)
+        
+        // Add constructor that takes the DTO for easy deserialization mapping
+        val dtoConstructor = MethodSpec.constructorBuilder()
+            .addModifiers(Modifier.PUBLIC)
+            .addParameter(className.nestedClass("Data"), "data")
+            .addStatement("this(data.message()\$L)", shape.allMembers.values
+                .filter { !it.memberName.equals("message", ignoreCase = true) }
+                .joinToString("") { ", data.${symbolProvider.toMemberName(it)}()" })
+        
+        typeBuilder.addMethod(dtoConstructor.build())
 
         val javaFile = JavaFile.builder(symbol.namespace, typeBuilder.build()).build()
         return ShapeGenerator.Result(listOf(javaFile.toGeneratedFile()))
@@ -80,18 +92,24 @@ class JavaExceptionGenerator : ShapeGenerator<StructureShape> {
 
         val nonMessageMembers = shape.allMembers.values.filter { !it.memberName.equals("message", ignoreCase = true) }
 
-        val recordParameters = listOf(
-            ParameterSpec.builder(String::class.java, "message")
-                .addAnnotation(AnnotationSpec.builder(jsonProperty).addMember("value", "\$S", "message").build())
-                .build()
-        ) + nonMessageMembers.map { member ->
+        val recordParameters = mutableListOf<ParameterSpec>()
+        
+        val messageParam = ParameterSpec.builder(String::class.java, "message")
+        if (serializationLibrary == "jackson") {
+            messageParam.addAnnotation(AnnotationSpec.builder(jsonProperty).addMember("value", "\$S", "message").build())
+        }
+        recordParameters.add(messageParam.build())
+
+        nonMessageMembers.forEach { member ->
             val memberSymbol = symbolProvider.toSymbol(member)
             val fieldName = symbolProvider.toMemberName(member)
             val typeName = memberSymbol.toTypeName()
             
-            ParameterSpec.builder(typeName, fieldName)
-                .addAnnotation(AnnotationSpec.builder(jsonProperty).addMember("value", "\$S", member.memberName).build())
-                .build()
+            val paramBuilder = ParameterSpec.builder(typeName, fieldName)
+            if (serializationLibrary == "jackson") {
+                paramBuilder.addAnnotation(AnnotationSpec.builder(jsonProperty).addMember("value", "\$S", member.memberName).build())
+            }
+            recordParameters.add(paramBuilder.build())
         }
 
         val toDtoArgs = listOf("getMessage()") + nonMessageMembers.map { member ->

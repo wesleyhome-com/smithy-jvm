@@ -10,7 +10,9 @@ import javax.lang.model.element.Modifier
 /**
  * Generates a Java sealed interface for a Smithy UnionShape.
  */
-class JavaUnionGenerator : ShapeGenerator<UnionShape> {
+class JavaUnionGenerator(
+    private val serializationLibrary: String = "jackson"
+) : ShapeGenerator<UnionShape> {
     override val shapeType: Class<UnionShape> = UnionShape::class.java
 
     override fun generate(shape: UnionShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
@@ -22,11 +24,14 @@ class JavaUnionGenerator : ShapeGenerator<UnionShape> {
 
         val typeBuilder = TypeSpec.interfaceBuilder(className)
             .addModifiers(Modifier.PUBLIC, Modifier.SEALED)
-            .addAnnotation(AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
+
+        if (serializationLibrary == "jackson") {
+            typeBuilder.addAnnotation(AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
                 .addMember("use", "\$T.Id.NAME", ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
                 .addMember("include", "\$T.As.WRAPPER_OBJECT", ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
                 .addMember("defaultImpl", "\$T.class", unknownClassName)
                 .build())
+        }
 
         if (shape.hasTrait(software.amazon.smithy.model.traits.DeprecatedTrait::class.java)) {
             typeBuilder.addAnnotation(Deprecated::class.java)
@@ -40,11 +45,13 @@ class JavaUnionGenerator : ShapeGenerator<UnionShape> {
             val memberSymbol = symbolProvider.toSymbol(member)
             val typeName = memberSymbol.toTypeName()
 
-            subTypesBuilder.addMember("value", "\$L", 
-                AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonSubTypes", "Type"))
-                    .addMember("value", "\$T.class", variantClassName)
-                    .addMember("name", "\$S", member.memberName)
-                    .build())
+            if (serializationLibrary == "jackson") {
+                subTypesBuilder.addMember("value", "\$L", 
+                    AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonSubTypes", "Type"))
+                        .addMember("value", "\$T.class", variantClassName)
+                        .addMember("name", "\$S", member.memberName)
+                        .build())
+            }
 
             val recordBuilder = TypeSpec.recordBuilder(memberName)
                 .addModifiers(Modifier.FINAL, Modifier.PUBLIC, Modifier.STATIC)
@@ -70,7 +77,9 @@ class JavaUnionGenerator : ShapeGenerator<UnionShape> {
         typeBuilder.addType(unknownBuilder.build())
         typeBuilder.addPermittedSubclass(unknownClassName)
         
-        typeBuilder.addAnnotation(subTypesBuilder.build())
+        if (serializationLibrary == "jackson") {
+            typeBuilder.addAnnotation(subTypesBuilder.build())
+        }
 
         val javaFile = JavaFile.builder(symbol.namespace, typeBuilder.build()).build()
         return ShapeGenerator.Result(listOf(javaFile.toGeneratedFile()))

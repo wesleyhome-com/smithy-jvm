@@ -2,6 +2,7 @@ package com.example.smithy.generator
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.isFalse
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.ShapeId
@@ -40,5 +41,31 @@ class JavaUnionGeneratorTest {
         assertThat(code).contains("final record StringValue(String value) implements MyUnionDTO")
         assertThat(code).contains("final record IntValue(Integer value) implements MyUnionDTO")
         assertThat(code).contains("final class Unknown implements MyUnionDTO")
+    }
+
+    @Test
+    fun `respects serializationLibrary setting`() {
+        val model = Model.assembler().addUnparsedModel(
+            "test.smithy", """
+                namespace com.example
+                union MyUnion {
+                    foo: String
+                }
+            """.trimIndent()
+        ).assemble().unwrap()
+
+        val shapeId = ShapeId.from("com.example#MyUnion")
+        val shape = model.expectShape(shapeId, UnionShape::class.java)
+        val symbolProvider = JavaSymbolProvider(model, "com.example.generated")
+
+        // Case 1: Jackson (Default)
+        val jacksonCode = JavaUnionGenerator("jackson").generate(shape, model, symbolProvider).files.first().content
+        assertThat(jacksonCode).contains("@JsonTypeInfo")
+        assertThat(jacksonCode).contains("@JsonSubTypes")
+
+        // Case 2: None
+        val noneCode = JavaUnionGenerator("none").generate(shape, model, symbolProvider).files.first().content
+        assertThat(noneCode.contains("@JsonTypeInfo")).isFalse()
+        assertThat(noneCode.contains("@JsonSubTypes")).isFalse()
     }
 }

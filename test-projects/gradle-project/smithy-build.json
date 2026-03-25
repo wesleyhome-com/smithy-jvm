@@ -10,12 +10,47 @@
         }
       }
     },
-    "client_only": {
+    "client_jackson_jdk": {
       "plugins": {
         "java-client": {
           "service": "com.example.library#LibraryService",
-          "package": "com.example.library.client",
-          "dtoSuffix": "DTO"
+          "package": "com.example.library.client.jackson",
+          "dtoSuffix": "DTO",
+          "serializationLibrary": "jackson",
+          "httpClientLibrary": "jdk"
+        }
+      }
+    },
+    "client_gson_jdk": {
+      "plugins": {
+        "java-client": {
+          "service": "com.example.library#LibraryService",
+          "package": "com.example.library.client.gson",
+          "dtoSuffix": "DTO",
+          "serializationLibrary": "gson",
+          "httpClientLibrary": "jdk"
+        }
+      }
+    },
+    "client_bare": {
+      "plugins": {
+        "java-client": {
+          "service": "com.example.library#LibraryService",
+          "package": "com.example.library.client.bare",
+          "dtoSuffix": "DTO",
+          "serializationLibrary": "none",
+          "httpClientLibrary": "none"
+        }
+      }
+    },
+    "client_okhttp_jackson": {
+      "plugins": {
+        "java-client": {
+          "service": "com.example.library#LibraryService",
+          "package": "com.example.library.client.okhttp",
+          "dtoSuffix": "DTO",
+          "serializationLibrary": "jackson",
+          "httpClientLibrary": "okhttp"
         }
       }
     },

@@ -30,15 +30,16 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
         val manifest = context.fileManifest
 
         val useResponseEntity = settings.getBooleanMemberOrDefault("useResponseEntity", true)
+        val serializationLibrary = "jackson"
 
         // 1. Run the orchestration with all strategies (Models + Spring Server)
         val result = JavaCodegenRunner.run(
             context = context,
             strategies = listOf(
-                JavaStructureGenerator(),
+                JavaStructureGenerator(serializationLibrary),
                 JavaExceptionGenerator(),
-                JavaEnumGenerator(),
-                JavaUnionGenerator(),
+                JavaEnumGenerator(serializationLibrary),
+                JavaUnionGenerator(serializationLibrary),
                 JavaSpringOperationApiGenerator(useResponseEntity),
                 JavaSpringControllerGenerator(useResponseEntity),
                 JavaSpringGlobalExceptionHandlerGenerator(),

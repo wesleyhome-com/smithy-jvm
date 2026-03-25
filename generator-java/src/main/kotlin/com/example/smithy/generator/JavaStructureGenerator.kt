@@ -14,7 +14,9 @@ import javax.lang.model.element.Modifier
 /**
  * Generates a Java record for a Smithy StructureShape.
  */
-class JavaStructureGenerator : ShapeGenerator<StructureShape> {
+class JavaStructureGenerator(
+    private val serializationLibrary: String = "jackson"
+) : ShapeGenerator<StructureShape> {
     override val shapeType: Class<StructureShape> = StructureShape::class.java
 
     private val jsonProperty = ClassName.get("com.fasterxml.jackson.annotation", "JsonProperty")
@@ -43,10 +45,14 @@ class JavaStructureGenerator : ShapeGenerator<StructureShape> {
             if (member.hasTrait(DeprecatedTrait::class.java)) {
                 paramBuilder.addAnnotation(Deprecated::class.java)
             }
-            paramBuilder.addAnnotation(AnnotationSpec.builder(jsonProperty)
-                .addMember("value", "\$S", member.memberName)
-                .build())
-                .build()
+
+            if (serializationLibrary == "jackson") {
+                paramBuilder.addAnnotation(AnnotationSpec.builder(jsonProperty)
+                    .addMember("value", "\$S", member.memberName)
+                    .build())
+            }
+
+            paramBuilder.build()
         }
         val typeBuilder = TypeSpec.recordBuilder(className)
             .addModifiers(Modifier.PUBLIC)

@@ -42,6 +42,12 @@ dependencies {
     implementation("org.mapstruct:mapstruct:1.6.3")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 
+    // GSON for client projection
+    implementation("com.google.code.gson:gson:2.12.1")
+
+    // OkHttp for client projection
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     // Smithy model dependencies
     smithyBuild(project(":generator-spring-server"))
     smithyBuild(project(":smithy-traits"))
@@ -97,14 +103,24 @@ smithy {
 
 sourceSets {
     main {
-        val srcPath = smithyOutput.dir("full_server/java-spring-server/")
-        println(srcPath)
+        val serverPath = smithyOutput.dir("full_server/java-spring-server/")
+        val modelPath = smithyOutput.dir("model_only/java-model/")
+        val jacksonClientPath = smithyOutput.dir("client_jackson_jdk/java-client/")
+        val gsonClientPath = smithyOutput.dir("client_gson_jdk/java-client/")
+        val okhttpClientPath = smithyOutput.dir("client_okhttp_jackson/java-client/")
+        val bareClientPath = smithyOutput.dir("client_bare/java-client/")
+        
         resources {
             srcDir("model")
-            srcDir(srcPath)
+            srcDir(serverPath)
         }
         java {
-            srcDir(srcPath)
+            srcDir(serverPath)
+            srcDir(modelPath)
+            srcDir(jacksonClientPath)
+            srcDir(gsonClientPath)
+            srcDir(okhttpClientPath)
+            srcDir(bareClientPath)
             srcDir(generatedDirectory.dir("jooq"))
         }
     }

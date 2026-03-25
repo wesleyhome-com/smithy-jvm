@@ -14,7 +14,9 @@ import javax.lang.model.element.Modifier
 /**
  * Generates a Java enum for a Smithy EnumShape, IntEnumShape, or a StringShape with the @enum trait.
  */
-class JavaEnumGenerator : ShapeGenerator<Shape> {
+class JavaEnumGenerator(
+    private val serializationLibrary: String = "jackson"
+) : ShapeGenerator<Shape> {
     override val shapeType: Class<Shape> = Shape::class.java
 
     override fun generate(shape: Shape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
@@ -85,9 +87,11 @@ class JavaEnumGenerator : ShapeGenerator<Shape> {
         val fallbackValueStr = if (isIntEnum) "null" else "\$S"
         val fallbackValueArg = if (isIntEnum) emptyArray<Any>() else arrayOf("UNKNOWN_TO_SDK_VERSION")
         
-        typeBuilder.addEnumConstant("UNKNOWN_TO_SDK_VERSION", TypeSpec.anonymousClassBuilder(fallbackValueStr, *fallbackValueArg)
-            .addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonEnumDefaultValue"))
-            .build())
+        val fallbackBuilder = TypeSpec.anonymousClassBuilder(fallbackValueStr, *fallbackValueArg)
+        if (serializationLibrary == "jackson") {
+            fallbackBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonEnumDefaultValue"))
+        }
+        typeBuilder.addEnumConstant("UNKNOWN_TO_SDK_VERSION", fallbackBuilder.build())
 
         // Add value field and constructor
         typeBuilder.addField(valueType, "value", Modifier.PRIVATE, Modifier.FINAL)
@@ -99,10 +103,13 @@ class JavaEnumGenerator : ShapeGenerator<Shape> {
 
         // Add @JsonValue getter
         val getterBuilder = MethodSpec.methodBuilder("getValue")
-            .addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"))
             .addModifiers(Modifier.PUBLIC)
             .returns(valueType)
             .addStatement("return value")
+        
+        if (serializationLibrary == "jackson") {
+            getterBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"))
+        }
 
         typeBuilder.addMethod(getterBuilder.build())
         
@@ -118,7 +125,6 @@ class JavaEnumGenerator : ShapeGenerator<Shape> {
 
         // Add @JsonCreator factory method
         val creatorBuilder = MethodSpec.methodBuilder("fromValue")
-            .addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonCreator"))
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(className)
             .addParameter(valueType, "value")
@@ -131,6 +137,10 @@ class JavaEnumGenerator : ShapeGenerator<Shape> {
             .endControlFlow()
             .endControlFlow()
             .addStatement("return UNKNOWN_TO_SDK_VERSION")
+
+        if (serializationLibrary == "jackson") {
+            creatorBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonCreator"))
+        }
 
         typeBuilder.addMethod(creatorBuilder.build())
 

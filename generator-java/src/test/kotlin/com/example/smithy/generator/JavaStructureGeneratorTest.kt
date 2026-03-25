@@ -2,6 +2,7 @@ package com.example.smithy.generator
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.isFalse
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.ShapeId
@@ -163,5 +164,30 @@ class JavaStructureGeneratorTest {
         assertThat(code).contains("if (count == null) count = 0;")
         assertThat(code).contains("if (active == null) active = false;")
         assertThat(code).contains("if (status == null) status = \"unknown\";")
+    }
+
+    @Test
+    fun `respects serializationLibrary setting`() {
+        val model = Model.assembler()
+            .addUnparsedModel("test.smithy", """
+                namespace com.example
+                structure MyStructure {
+                    foo: String
+                }
+            """.trimIndent())
+            .assemble()
+            .unwrap()
+        
+        val shapeId = ShapeId.from("com.example#MyStructure")
+        val shape = model.expectShape(shapeId, StructureShape::class.java)
+        val symbolProvider = JavaSymbolProvider(model, "com.example.generated")
+        
+        // Case 1: Jackson (Default)
+        val jacksonCode = JavaStructureGenerator("jackson").generate(shape, model, symbolProvider).files.first().content
+        assertThat(jacksonCode).contains("@JsonProperty(\"foo\")")
+        
+        // Case 2: None
+        val noneCode = JavaStructureGenerator("none").generate(shape, model, symbolProvider).files.first().content
+        assertThat(noneCode.contains("@JsonProperty")).isFalse()
     }
 }
