@@ -1,0 +1,27 @@
+package com.wesleyhome.library.server;
+
+import com.wesleyhome.library.client.jackson.client.LibraryServiceClient;
+import com.wesleyhome.library.client.jackson.model.catalog.SearchCatalogInputDTO;
+import com.wesleyhome.library.client.jackson.model.catalog.SearchCatalogOutputDTO;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class JacksonJdkIntegrationTest extends BaseIntegrationTest {
+
+    @Test
+    public void testSearchCatalog() throws IOException {
+        LibraryServiceClient client = LibraryServiceClient.create(getBaseUrl());
+        
+        SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0, "integration-test");
+        SearchCatalogOutputDTO response = client.searchCatalog(input);
+
+        assertThat(response).isNotNull();
+        assertThat(response.items()).isNotNull();
+        // total is now an @httpHeader
+        System.out.println("Total is: " + response.total());
+        assertThat(response.total()).isNotNull().isGreaterThanOrEqualTo(0L);
+    }
+}

@@ -11,7 +11,7 @@ plugins {
     id("org.jooq.jooq-codegen-gradle") version "3.19.1"
 }
 
-group = "com.example"
+group = "com.wesleyhome"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -83,7 +83,7 @@ jooq {
                         isFluentSetters = true
                     }
                     target {
-                        packageName = "com.example.library.db"
+                        packageName = "com.wesleyhome.library.db"
                         directory = "build/generated/sources/jooq"
                     }
                 }

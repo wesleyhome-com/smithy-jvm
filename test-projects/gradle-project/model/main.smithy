@@ -1,6 +1,6 @@
 $version: "2"
 
-namespace com.example.library
+namespace com.wesleyhome.library
 
 @documentation("The central service for managing the library, including catalog search, circulation, reservations, and patron management.")
 service LibraryService {

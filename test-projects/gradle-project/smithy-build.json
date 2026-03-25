@@ -4,8 +4,8 @@
     "model_only": {
       "plugins": {
         "java-model": {
-          "service": "com.example.library#LibraryService",
-          "package": "com.example.library.model",
+          "service": "com.wesleyhome.library#LibraryService",
+          "package": "com.wesleyhome.library.model",
           "dtoSuffix": ""
         }
       }
@@ -13,8 +13,8 @@
     "client_jackson_jdk": {
       "plugins": {
         "java-client": {
-          "service": "com.example.library#LibraryService",
-          "package": "com.example.library.client.jackson",
+          "service": "com.wesleyhome.library#LibraryService",
+          "package": "com.wesleyhome.library.client.jackson",
           "dtoSuffix": "DTO",
           "serializationLibrary": "jackson",
           "httpClientLibrary": "jdk"
@@ -24,8 +24,8 @@
     "client_gson_jdk": {
       "plugins": {
         "java-client": {
-          "service": "com.example.library#LibraryService",
-          "package": "com.example.library.client.gson",
+          "service": "com.wesleyhome.library#LibraryService",
+          "package": "com.wesleyhome.library.client.gson",
           "dtoSuffix": "DTO",
           "serializationLibrary": "gson",
           "httpClientLibrary": "jdk"
@@ -35,8 +35,8 @@
     "client_bare": {
       "plugins": {
         "java-client": {
-          "service": "com.example.library#LibraryService",
-          "package": "com.example.library.client.bare",
+          "service": "com.wesleyhome.library#LibraryService",
+          "package": "com.wesleyhome.library.client.bare",
           "dtoSuffix": "DTO",
           "serializationLibrary": "none",
           "httpClientLibrary": "none"
@@ -46,8 +46,8 @@
     "client_okhttp_jackson": {
       "plugins": {
         "java-client": {
-          "service": "com.example.library#LibraryService",
-          "package": "com.example.library.client.okhttp",
+          "service": "com.wesleyhome.library#LibraryService",
+          "package": "com.wesleyhome.library.client.okhttp",
           "dtoSuffix": "DTO",
           "serializationLibrary": "jackson",
           "httpClientLibrary": "okhttp"
@@ -57,8 +57,8 @@
     "full_server": {
       "plugins": {
         "java-spring-server": {
-          "service": "com.example.library#LibraryService",
-          "package": "com.example.library.generated"
+          "service": "com.wesleyhome.library#LibraryService",
+          "package": "com.wesleyhome.library.server"
         }
       }
     }
