@@ -1,14 +1,16 @@
 package com.example.library.mapper.api;
 
 import com.example.library.domain.Reservation;
-import com.example.library.generated.model.reservations.*;
+import com.example.library.generated.model.reservations.ListReservationsOutputDTO;
+import com.example.library.generated.model.reservations.ReservationDTO;
+import com.example.library.generated.model.reservations.ReservationStatusDTO;
+import com.example.library.generated.model.reservations.ReserveComputerOutputDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ValueMapping;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface ReservationApiMapper {

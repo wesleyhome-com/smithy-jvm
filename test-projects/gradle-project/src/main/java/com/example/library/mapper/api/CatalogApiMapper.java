@@ -1,7 +1,12 @@
 package com.example.library.mapper.api;
 
 import com.example.library.domain.MediaItem;
-import com.example.library.generated.model.catalog.*;
+import com.example.library.generated.model.catalog.AddMediaItemOutputDTO;
+import com.example.library.generated.model.catalog.BookDetailsDTO;
+import com.example.library.generated.model.catalog.CdDetailsDTO;
+import com.example.library.generated.model.catalog.GetMediaOutputDTO;
+import com.example.library.generated.model.catalog.MagazineDetailsDTO;
+import com.example.library.generated.model.catalog.MovieDetailsDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;

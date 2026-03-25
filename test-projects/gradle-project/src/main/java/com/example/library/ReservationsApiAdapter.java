@@ -1,7 +1,12 @@
 package com.example.library;
 
-import com.example.library.generated.api.reservations.*;
-import com.example.library.generated.model.reservations.*;
+import com.example.library.generated.api.reservations.CancelReservationApi;
+import com.example.library.generated.api.reservations.ListReservationsApi;
+import com.example.library.generated.api.reservations.ReserveComputerApi;
+import com.example.library.generated.model.reservations.CancelReservationOutputDTO;
+import com.example.library.generated.model.reservations.ComputerReservationDetailsDTO;
+import com.example.library.generated.model.reservations.ListReservationsOutputDTO;
+import com.example.library.generated.model.reservations.ReserveComputerOutputDTO;
 import com.example.library.mapper.api.ReservationApiMapper;
 import com.example.library.service.ReservationService;
 import org.springframework.stereotype.Service;

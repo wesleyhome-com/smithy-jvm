@@ -1,7 +1,10 @@
 package com.example.library;
 
-import com.example.library.generated.api.patron.*;
-import com.example.library.generated.model.patron.*;
+import com.example.library.generated.api.patron.GetPatronInfoApi;
+import com.example.library.generated.api.patron.UpdatePatronContactApi;
+import com.example.library.generated.model.patron.ContactDetailsDTO;
+import com.example.library.generated.model.patron.GetPatronInfoOutputDTO;
+import com.example.library.generated.model.patron.UpdatePatronContactOutputDTO;
 import com.example.library.mapper.api.PatronApiMapper;
 import com.example.library.service.PatronService;
 import org.springframework.stereotype.Service;

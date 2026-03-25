@@ -1,7 +1,8 @@
 package com.example.library.mapper.api;
 
 import com.example.library.domain.Loan;
-import com.example.library.generated.model.circulation.*;
+import com.example.library.generated.model.circulation.CheckOutItemOutputDTO;
+import com.example.library.generated.model.circulation.LoanRecordDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;

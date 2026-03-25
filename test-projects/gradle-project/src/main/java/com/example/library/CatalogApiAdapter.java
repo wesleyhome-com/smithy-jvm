@@ -1,7 +1,13 @@
 package com.example.library;
 
-import com.example.library.generated.api.catalog.*;
-import com.example.library.generated.model.catalog.*;
+import com.example.library.generated.api.catalog.AddMediaItemApi;
+import com.example.library.generated.api.catalog.GetMediaApi;
+import com.example.library.generated.api.catalog.SearchCatalogApi;
+import com.example.library.generated.model.catalog.AddMediaItemOutputDTO;
+import com.example.library.generated.model.catalog.GetMediaOutputDTO;
+import com.example.library.generated.model.catalog.MediaItemDTO;
+import com.example.library.generated.model.catalog.MediaTypeDTO;
+import com.example.library.generated.model.catalog.SearchCatalogOutputDTO;
 import com.example.library.mapper.api.CatalogApiMapper;
 import com.example.library.service.MediaService;
 import org.springframework.stereotype.Service;

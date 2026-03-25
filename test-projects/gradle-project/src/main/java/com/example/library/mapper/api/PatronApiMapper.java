@@ -1,7 +1,10 @@
 package com.example.library.mapper.api;
 
 import com.example.library.domain.Patron;
-import com.example.library.generated.model.patron.*;
+import com.example.library.generated.model.patron.GetPatronInfoOutputDTO;
+import com.example.library.generated.model.patron.MembershipStatusDTO;
+import com.example.library.generated.model.patron.PatronDTO;
+import com.example.library.generated.model.patron.UpdatePatronContactOutputDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;

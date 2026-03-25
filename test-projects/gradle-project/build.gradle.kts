@@ -86,7 +86,9 @@ jooq {
     }
 }
 
-val smithyOutput = layout.buildDirectory.dir("generated/sources/smithy").get()
+val buildDirectory = layout.buildDirectory.get()
+val generatedDirectory = buildDirectory.dir("generated/sources")
+val smithyOutput: Directory = generatedDirectory.dir("smithy")
 
 // Configure Smithy Build
 smithy {
@@ -95,14 +97,15 @@ smithy {
 
 sourceSets {
     main {
-        val srcPath = smithyOutput.dir("source/java-spring-server/")
+        val srcPath = smithyOutput.dir("full_server/java-spring-server/")
+        println(srcPath)
         resources {
             srcDir("model")
             srcDir(srcPath)
         }
         java {
             srcDir(srcPath)
-            srcDir("build/generated/sources/jooq")
+            srcDir(generatedDirectory.dir("jooq"))
         }
     }
 }

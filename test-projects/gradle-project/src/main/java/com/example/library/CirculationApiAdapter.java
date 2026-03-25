@@ -1,7 +1,8 @@
 package com.example.library;
 
-import com.example.library.generated.api.circulation.*;
-import com.example.library.generated.model.circulation.*;
+import com.example.library.generated.api.circulation.CheckOutItemApi;
+import com.example.library.generated.model.circulation.CheckOutItemOutputDTO;
+import com.example.library.generated.model.circulation.CheckOutRequestDTO;
 import com.example.library.mapper.api.CirculationApiMapper;
 import com.example.library.service.CirculationService;
 import org.springframework.stereotype.Service;

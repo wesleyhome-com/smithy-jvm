@@ -4,14 +4,14 @@ import com.example.library.db.tables.records.LoansRecord;
 import com.example.library.db.tables.records.MediaItemsRecord;
 import com.example.library.db.tables.records.PatronsRecord;
 import org.jooq.DSLContext;
-import org.jooq.Record;
 import org.jooq.Record3;
-import org.jooq.Result;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-import static com.example.library.db.Tables.*;
+import static com.example.library.db.Tables.LOANS;
+import static com.example.library.db.Tables.MEDIA_ITEMS;
+import static com.example.library.db.Tables.PATRONS;
 
 @Repository
 public class LoanRepository {
