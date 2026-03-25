@@ -2,7 +2,7 @@ import org.jooq.meta.jaxb.MatcherRule
 import org.jooq.meta.jaxb.MatcherTransformType
 
 plugins {
-    id("org.springframework.boot") version "4.0.3"
+    id("org.springframework.boot") version "4.0.4"
     id("io.spring.dependency-management") version "1.1.7"
     java
     // Apply Smithy Gradle plugin
