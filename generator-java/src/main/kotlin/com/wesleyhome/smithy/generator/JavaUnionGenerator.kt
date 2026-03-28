@@ -15,7 +15,8 @@ import javax.lang.model.element.Modifier
  * Generates a Java sealed interface for a Smithy UnionShape.
  */
 class JavaUnionGenerator(
-    private val serializationLibrary: String = "jackson"
+    private val serializationLibrary: String = "jackson",
+    private val codegenContext: JavaCodegenContext? = null
 ) : ShapeGenerator<UnionShape> {
     override val shapeType: Class<UnionShape> = UnionShape::class.java
 
@@ -93,6 +94,11 @@ class JavaUnionGenerator(
 
         if (serializationLibrary == "jackson") {
             typeBuilder.addAnnotation(subTypesBuilder.build())
+        }
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onShapeGenerated(ctx, shape, typeBuilder)
+            }
         }
 
         val javaFile = JavaFile.builder(symbol.namespace, typeBuilder.build()).build()

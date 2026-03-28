@@ -10,19 +10,19 @@ class SpringServerIntegration : JavaCodegenIntegration {
         return listOf(
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_STRUCTURES,
-                generators = listOf(JavaStructureGenerator(serializationLibrary))
+                generators = listOf(JavaStructureGenerator(serializationLibrary, context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_EXCEPTIONS,
-                generators = listOf(JavaExceptionGenerator(serializationLibrary))
+                generators = listOf(JavaExceptionGenerator(serializationLibrary, context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_ENUMS,
-                generators = listOf(JavaEnumGenerator(serializationLibrary))
+                generators = listOf(JavaEnumGenerator(serializationLibrary, context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_UNIONS,
-                generators = listOf(JavaUnionGenerator(serializationLibrary))
+                generators = listOf(JavaUnionGenerator(serializationLibrary, context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_API,

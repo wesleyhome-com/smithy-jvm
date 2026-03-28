@@ -27,7 +27,8 @@ import javax.lang.model.element.Modifier
  * Generates a Java record for a Smithy StructureShape.
  */
 class JavaStructureGenerator(
-    private val serializationLibrary: String = "jackson"
+    private val serializationLibrary: String = "jackson",
+    private val codegenContext: JavaCodegenContext? = null
 ) : ShapeGenerator<StructureShape> {
     override val shapeType: Class<StructureShape> = StructureShape::class.java
 
@@ -64,6 +65,11 @@ class JavaStructureGenerator(
                         .addMember("value", $$"$S", member.memberName)
                         .build()
                 )
+            }
+            codegenContext?.let { ctx ->
+                ctx.integrations.forEach { integration ->
+                    integration.onRecordMemberGenerated(ctx, member, paramBuilder)
+                }
             }
 
             paramBuilder.build()
@@ -106,6 +112,11 @@ class JavaStructureGenerator(
                 }
             }
             typeBuilder.addMethod(compactConstructor.build())
+        }
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onShapeGenerated(ctx, shape, typeBuilder)
+            }
         }
 
         val javaFile = JavaFile.builder(symbol.namespace, typeBuilder.build()).build()

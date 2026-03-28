@@ -17,7 +17,8 @@ import javax.lang.model.element.Modifier
  * Generates a Java exception for a Smithy StructureShape with the @error trait.
  */
 class JavaExceptionGenerator(
-    private val serializationLibrary: String = "jackson"
+    private val serializationLibrary: String = "jackson",
+    private val codegenContext: JavaCodegenContext? = null
 ) : ShapeGenerator<StructureShape> {
     override val shapeType: Class<StructureShape> = StructureShape::class.java
 
@@ -90,6 +91,11 @@ class JavaExceptionGenerator(
                     .joinToString("") { ", data.${symbolProvider.toMemberName(it)}()" })
 
         typeBuilder.addMethod(dtoConstructor.build())
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onShapeGenerated(ctx, shape, typeBuilder)
+            }
+        }
 
         val javaFile = JavaFile.builder(symbol.namespace, typeBuilder.build()).build()
         return ShapeGenerator.Result(listOf(javaFile.toGeneratedFile()))

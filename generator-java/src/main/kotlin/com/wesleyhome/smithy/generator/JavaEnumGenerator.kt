@@ -17,7 +17,8 @@ import javax.lang.model.element.Modifier
  * Generates a Java enum for Smithy 2 `enum` and `intEnum` shapes.
  */
 class JavaEnumGenerator(
-    private val serializationLibrary: String = "jackson"
+    private val serializationLibrary: String = "jackson",
+    private val codegenContext: JavaCodegenContext? = null
 ) : ShapeGenerator<Shape> {
     override val shapeType: Class<Shape> = Shape::class.java
 
@@ -137,6 +138,11 @@ class JavaEnumGenerator(
         }
 
         typeBuilder.addMethod(creatorBuilder.build())
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onShapeGenerated(ctx, shape, typeBuilder)
+            }
+        }
 
         val javaFile = JavaFile.builder(symbol.namespace, typeBuilder.build()).build()
         return ShapeGenerator.Result(listOf(javaFile.toGeneratedFile()))

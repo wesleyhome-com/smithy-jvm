@@ -10,19 +10,19 @@ class ModelIntegration : JavaCodegenIntegration {
         return listOf(
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_STRUCTURES,
-                generators = listOf(JavaStructureGenerator(serializationLibrary))
+                generators = listOf(JavaStructureGenerator(serializationLibrary, context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_EXCEPTIONS,
-                generators = listOf(JavaExceptionGenerator())
+                generators = listOf(JavaExceptionGenerator(codegenContext = context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_ENUMS,
-                generators = listOf(JavaEnumGenerator(serializationLibrary))
+                generators = listOf(JavaEnumGenerator(serializationLibrary, context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_UNIONS,
-                generators = listOf(JavaUnionGenerator(serializationLibrary))
+                generators = listOf(JavaUnionGenerator(serializationLibrary, context))
             )
         )
     }
