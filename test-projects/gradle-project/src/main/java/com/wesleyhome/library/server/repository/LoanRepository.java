@@ -9,9 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-import static com.wesleyhome.library.db.Tables.LOANS;
-import static com.wesleyhome.library.db.Tables.MEDIA_ITEMS;
-import static com.wesleyhome.library.db.Tables.PATRONS;
+import static com.wesleyhome.library.db.Tables.*;
 
 @Repository
 public class LoanRepository {

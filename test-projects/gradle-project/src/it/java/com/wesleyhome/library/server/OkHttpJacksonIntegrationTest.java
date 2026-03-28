@@ -10,13 +10,11 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class OkHttpJacksonIntegrationTest
-        extends BaseIntegrationTest
-{
+        extends BaseIntegrationTest {
 
     @Test
     public void testSearchCatalog()
-            throws IOException
-    {
+            throws IOException {
         LibraryServiceClient client = LibraryServiceClient.create(getBaseUrl());
 
         SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0, "integration-test");

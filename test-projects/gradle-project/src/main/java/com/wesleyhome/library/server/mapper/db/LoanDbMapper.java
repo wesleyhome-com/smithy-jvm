@@ -10,9 +10,9 @@ import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING, 
-    unmappedTargetPolicy = ReportingPolicy.IGNORE,
-    uses = {PatronDbMapper.class, MediaItemDbMapper.class, CommonDbMapper.class}
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {PatronDbMapper.class, MediaItemDbMapper.class, CommonDbMapper.class}
 )
 public interface LoanDbMapper {
 

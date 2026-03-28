@@ -4,15 +4,16 @@ import assertk.assertThat
 import assertk.assertions.contains
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.shapes.ShapeId
 import software.amazon.smithy.model.shapes.ServiceShape
+import software.amazon.smithy.model.shapes.ShapeId
 
 class JavaSpringGlobalExceptionHandlerGeneratorTest {
 
     @Test
     fun `generates exception handler returning clean dto`() {
         val model = Model.assembler()
-            .addUnparsedModel("test.smithy", """
+            .addUnparsedModel(
+                "test.smithy", """
                 namespace com.wesleyhome
                 
                 service MyService {
@@ -29,18 +30,19 @@ class JavaSpringGlobalExceptionHandlerGeneratorTest {
                     @required
                     message: String
                 }
-            """.trimIndent())
+            """.trimIndent()
+            )
             .assemble()
             .unwrap()
-        
+
         val serviceId = ShapeId.from("com.wesleyhome#MyService")
         val service = model.expectShape(serviceId, ServiceShape::class.java)
         val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-        
+
         val generator = JavaSpringGlobalExceptionHandlerGenerator()
         val result = generator.generate(service, model, symbolProvider)
         val code = result.files.first().content
-        
+
         assertThat(code).contains("@ControllerAdvice")
         assertThat(code).contains("public class GlobalExceptionHandler")
         assertThat(code).contains("@ExceptionHandler(NotFoundError.class)")
@@ -51,7 +53,8 @@ class JavaSpringGlobalExceptionHandlerGeneratorTest {
     @Test
     fun `generates exception handler for errors on resource operations`() {
         val model = Model.assembler()
-            .addUnparsedModel("test.smithy", """
+            .addUnparsedModel(
+                "test.smithy", """
                 namespace com.wesleyhome
                 
                 service MyService {
@@ -86,18 +89,19 @@ class JavaSpringGlobalExceptionHandlerGeneratorTest {
                     @required
                     message: String
                 }
-            """.trimIndent())
+            """.trimIndent()
+            )
             .assemble()
             .unwrap()
-        
+
         val serviceId = ShapeId.from("com.wesleyhome#MyService")
         val service = model.expectShape(serviceId, ServiceShape::class.java)
         val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-        
+
         val generator = JavaSpringGlobalExceptionHandlerGenerator()
         val result = generator.generate(service, model, symbolProvider)
         val code = result.files.first().content
-        
+
         assertThat(code).contains("@ControllerAdvice")
         assertThat(code).contains("public class GlobalExceptionHandler")
         assertThat(code).contains("@ExceptionHandler(NotFoundError.class)")

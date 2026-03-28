@@ -48,17 +48,17 @@ class LoanRepositoryTest {
 
             // Detailed Assertions for each record
             assertThat(loan)
-                .returns(loanId, LoansRecord::getId)
-                .returns(patronId, LoansRecord::getPatronId)
-                .returns(mediaId, LoansRecord::getItemId);
-                
+                    .returns(loanId, LoansRecord::getId)
+                    .returns(patronId, LoansRecord::getPatronId)
+                    .returns(mediaId, LoansRecord::getItemId);
+
             assertThat(patron)
-                .returns("John Doe", PatronsRecord::getName)
-                .returns("john@example.com", PatronsRecord::getEmail);
+                    .returns("John Doe", PatronsRecord::getName)
+                    .returns("john@example.com", PatronsRecord::getEmail);
 
             assertThat(item)
-                .returns("The Hobbit", MediaItemsRecord::getTitle)
-                .returns("BOOK", MediaItemsRecord::getMediaType);
+                    .returns("The Hobbit", MediaItemsRecord::getTitle)
+                    .returns("BOOK", MediaItemsRecord::getMediaType);
         });
     }
 

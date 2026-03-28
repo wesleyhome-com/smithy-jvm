@@ -11,10 +11,11 @@ import software.amazon.smithy.model.shapes.StringShape
 
 class JavaEnumGeneratorTest {
 
-    @Test
-    fun `generates java enum with safe fallback for smithy 1_0 string enum`() {
-        val model = Model.assembler()
-            .addUnparsedModel("test.smithy", """
+	@Test
+	fun `generates java enum with safe fallback for smithy 1_0 string enum`() {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
                 namespace com.wesleyhome
                 
                 @documentation("The status of a thing.")
@@ -23,42 +24,44 @@ class JavaEnumGeneratorTest {
                     { value: "inactive", name: "INACTIVE" }
                 ])
                 string Status
-            """.trimIndent())
-            .assemble()
-            .unwrap()
-        
-        val shapeId = ShapeId.from("com.wesleyhome#Status")
-        val shape = model.expectShape(shapeId, StringShape::class.java)
-        val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-        
-        val generator = JavaEnumGenerator()
-        val generatedFiles = generator.generate(shape, model, symbolProvider)
-        val code = generatedFiles.files.first().content
-        
-        // Check basic enum structure
-        assertThat(code).contains("public enum StatusDTO")
-        assertThat(code).contains("ACTIVE(\"active\")")
-        assertThat(code).contains("INACTIVE(\"inactive\")")
-        
-        // Check javadoc
-        assertThat(code).contains("/**")
-        assertThat(code).contains("* The status of a thing.")
-        assertThat(code).contains("   * It is active.")
-        
-        // Check fallback and Jackson annotations
-        assertThat(code).contains("UNKNOWN_TO_SDK_VERSION(\"UNKNOWN_TO_SDK_VERSION\")")
-        assertThat(code).contains("@JsonEnumDefaultValue")
-        assertThat(code).contains("@JsonValue")
-        assertThat(code).contains("@JsonCreator")
-        
-        // Check fromValue logic
-        assertThat(code).contains("return UNKNOWN_TO_SDK_VERSION;")
-    }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
 
-    @Test
-    fun `generates java enum with safe fallback for smithy 2_0 enum shape`() {
-        val model = Model.assembler()
-            .addUnparsedModel("test.smithy", """
+		val shapeId = ShapeId.from("com.wesleyhome#Status")
+		val shape = model.expectShape(shapeId, StringShape::class.java)
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+
+		val generator = JavaEnumGenerator()
+		val generatedFiles = generator.generate(shape, model, symbolProvider)
+		val code = generatedFiles.files.first().content
+
+		// Check basic enum structure
+		assertThat(code).contains("public enum StatusDTO")
+		assertThat(code).contains("ACTIVE(\"active\")")
+		assertThat(code).contains("INACTIVE(\"inactive\")")
+
+		// Check javadoc
+		assertThat(code).contains("/**")
+		assertThat(code).contains("* The status of a thing.")
+		assertThat(code).contains("   * It is active.")
+
+		// Check fallback and Jackson annotations
+		assertThat(code).contains("UNKNOWN_TO_SDK_VERSION(\"UNKNOWN_TO_SDK_VERSION\")")
+		assertThat(code).contains("@JsonEnumDefaultValue")
+		assertThat(code).contains("@JsonValue")
+		assertThat(code).contains("@JsonCreator")
+
+		// Check fromValue logic
+		assertThat(code).contains("return UNKNOWN_TO_SDK_VERSION;")
+	}
+
+	@Test
+	fun `generates java enum with safe fallback for smithy 2_0 enum shape`() {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
                 ${'$'}version: "2"
                 namespace com.wesleyhome
                 
@@ -69,43 +72,45 @@ class JavaEnumGeneratorTest {
                     RUNNING = "running"
                     STOPPED = "stopped"
                 }
-            """.trimIndent())
-            .assemble()
-            .unwrap()
-        
-        val shapeId = ShapeId.from("com.wesleyhome#ProcessState")
-        val shape = model.expectShape(shapeId, EnumShape::class.java)
-        val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-        
-        val generator = JavaEnumGenerator()
-        val generatedFiles = generator.generate(shape, model, symbolProvider)
-        val code = generatedFiles.files.first().content
-        
-        // Check basic enum structure
-        assertThat(code).contains("public enum ProcessStateDTO")
-        assertThat(code).contains("STARTING(\"starting\")")
-        assertThat(code).contains("RUNNING(\"running\")")
-        assertThat(code).contains("STOPPED(\"stopped\")")
-        
-        // Check javadoc
-        assertThat(code).contains("/**")
-        assertThat(code).contains("* The state of a process.")
-        assertThat(code).contains("   * The process is starting.")
-        
-        // Check fallback and Jackson annotations
-        assertThat(code).contains("UNKNOWN_TO_SDK_VERSION(\"UNKNOWN_TO_SDK_VERSION\")")
-        assertThat(code).contains("@JsonEnumDefaultValue")
-        assertThat(code).contains("@JsonValue")
-        assertThat(code).contains("@JsonCreator")
-        
-        // Check fromValue logic
-        assertThat(code).contains("return UNKNOWN_TO_SDK_VERSION;")
-    }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
 
-    @Test
-    fun `generates java enum with safe fallback for smithy 2_0 intEnum shape`() {
-        val model = Model.assembler()
-            .addUnparsedModel("test.smithy", """
+		val shapeId = ShapeId.from("com.wesleyhome#ProcessState")
+		val shape = model.expectShape(shapeId, EnumShape::class.java)
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+
+		val generator = JavaEnumGenerator()
+		val generatedFiles = generator.generate(shape, model, symbolProvider)
+		val code = generatedFiles.files.first().content
+
+		// Check basic enum structure
+		assertThat(code).contains("public enum ProcessStateDTO")
+		assertThat(code).contains("STARTING(\"starting\")")
+		assertThat(code).contains("RUNNING(\"running\")")
+		assertThat(code).contains("STOPPED(\"stopped\")")
+
+		// Check javadoc
+		assertThat(code).contains("/**")
+		assertThat(code).contains("* The state of a process.")
+		assertThat(code).contains("   * The process is starting.")
+
+		// Check fallback and Jackson annotations
+		assertThat(code).contains("UNKNOWN_TO_SDK_VERSION(\"UNKNOWN_TO_SDK_VERSION\")")
+		assertThat(code).contains("@JsonEnumDefaultValue")
+		assertThat(code).contains("@JsonValue")
+		assertThat(code).contains("@JsonCreator")
+
+		// Check fromValue logic
+		assertThat(code).contains("return UNKNOWN_TO_SDK_VERSION;")
+	}
+
+	@Test
+	fun `generates java enum with safe fallback for smithy 2_0 intEnum shape`() {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
                 ${'$'}version: "2"
                 namespace com.wesleyhome
                 
@@ -115,63 +120,66 @@ class JavaEnumGeneratorTest {
                     WARNING = 2
                     CRITICAL = 3
                 }
-            """.trimIndent())
-            .assemble()
-            .unwrap()
-        
-        val shapeId = ShapeId.from("com.wesleyhome#IntStatus")
-        val shape = model.expectShape(shapeId, software.amazon.smithy.model.shapes.IntEnumShape::class.java)
-        val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-        
-        val generator = JavaEnumGenerator()
-        val generatedFiles = generator.generate(shape, model, symbolProvider)
-        val code = generatedFiles.files.first().content
-        
-        // Check basic enum structure
-        assertThat(code).contains("public enum IntStatusDTO")
-        assertThat(code).contains("OK(1)")
-        assertThat(code).contains("WARNING(2)")
-        assertThat(code).contains("CRITICAL(3)")
-        
-        // Check fallback and Jackson annotations
-        assertThat(code).contains("UNKNOWN_TO_SDK_VERSION(null)")
-        assertThat(code).contains("@JsonEnumDefaultValue")
-        assertThat(code).contains("@JsonValue")
-        assertThat(code).contains("@JsonCreator")
-        
-        // Check value field
-        assertThat(code).contains("private final Integer value;")
-        assertThat(code).contains("public Integer getValue()")
-        
-        // Check fromValue logic
-        assertThat(code).contains("return UNKNOWN_TO_SDK_VERSION;")
-    }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
 
-    @Test
-    fun `respects serializationLibrary setting`() {
-        val model = Model.assembler()
-            .addUnparsedModel("test.smithy", """
+		val shapeId = ShapeId.from("com.wesleyhome#IntStatus")
+		val shape = model.expectShape(shapeId, software.amazon.smithy.model.shapes.IntEnumShape::class.java)
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+
+		val generator = JavaEnumGenerator()
+		val generatedFiles = generator.generate(shape, model, symbolProvider)
+		val code = generatedFiles.files.first().content
+
+		// Check basic enum structure
+		assertThat(code).contains("public enum IntStatusDTO")
+		assertThat(code).contains("OK(1)")
+		assertThat(code).contains("WARNING(2)")
+		assertThat(code).contains("CRITICAL(3)")
+
+		// Check fallback and Jackson annotations
+		assertThat(code).contains("UNKNOWN_TO_SDK_VERSION(null)")
+		assertThat(code).contains("@JsonEnumDefaultValue")
+		assertThat(code).contains("@JsonValue")
+		assertThat(code).contains("@JsonCreator")
+
+		// Check value field
+		assertThat(code).contains("private final Integer value;")
+		assertThat(code).contains("public Integer getValue()")
+
+		// Check fromValue logic
+		assertThat(code).contains("return UNKNOWN_TO_SDK_VERSION;")
+	}
+
+	@Test
+	fun `respects serializationLibrary setting`() {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
                 ${'$'}version: "2"
                 namespace com.wesleyhome
                 enum Status {
                     ACTIVE = "active"
                 }
-            """.trimIndent())
-            .assemble()
-            .unwrap()
-        
-        val shapeId = ShapeId.from("com.wesleyhome#Status")
-        val shape = model.expectShape(shapeId)
-        val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-        
-        // Case 1: Jackson (Default)
-        val jacksonCode = JavaEnumGenerator("jackson").generate(shape, model, symbolProvider).files.first().content
-        assertThat(jacksonCode).contains("@JsonValue")
-        assertThat(jacksonCode).contains("@JsonCreator")
-        
-        // Case 2: None
-        val noneCode = JavaEnumGenerator("none").generate(shape, model, symbolProvider).files.first().content
-        assertThat(noneCode.contains("@JsonValue")).isFalse()
-        assertThat(noneCode.contains("@JsonCreator")).isFalse()
-    }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
+
+		val shapeId = ShapeId.from("com.wesleyhome#Status")
+		val shape = model.expectShape(shapeId)
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+
+		// Case 1: Jackson (Default)
+		val jacksonCode = JavaEnumGenerator("jackson").generate(shape, model, symbolProvider).files.first().content
+		assertThat(jacksonCode).contains("@JsonValue")
+		assertThat(jacksonCode).contains("@JsonCreator")
+
+		// Case 2: None
+		val noneCode = JavaEnumGenerator("none").generate(shape, model, symbolProvider).files.first().content
+		assertThat(noneCode.contains("@JsonValue")).isFalse()
+		assertThat(noneCode.contains("@JsonCreator")).isFalse()
+	}
 }

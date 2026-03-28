@@ -14,7 +14,8 @@ class JavaModelCodegenPlugin : SmithyBuildPlugin {
     override fun getName(): String = "java-model"
 
     override fun execute(context: PluginContext) {
-        val serializationLibrary = context.settings.getStringMember("serializationLibrary").map { it.value }.orElse("jackson")
+        val serializationLibrary =
+            context.settings.getStringMember("serializationLibrary").map { it.value }.orElse("jackson")
         val strategies = listOf(
             JavaStructureGenerator(serializationLibrary),
             JavaExceptionGenerator(),

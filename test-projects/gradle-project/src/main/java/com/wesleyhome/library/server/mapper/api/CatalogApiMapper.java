@@ -1,12 +1,7 @@
 package com.wesleyhome.library.server.mapper.api;
 
 import com.wesleyhome.library.server.domain.MediaItem;
-import com.wesleyhome.library.server.model.catalog.AddMediaItemOutputDTO;
-import com.wesleyhome.library.server.model.catalog.BookDetailsDTO;
-import com.wesleyhome.library.server.model.catalog.CdDetailsDTO;
-import com.wesleyhome.library.server.model.catalog.GetMediaOutputDTO;
-import com.wesleyhome.library.server.model.catalog.MagazineDetailsDTO;
-import com.wesleyhome.library.server.model.catalog.MovieDetailsDTO;
+import com.wesleyhome.library.server.model.catalog.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -40,8 +35,11 @@ public interface CatalogApiMapper {
     }
 
     BookDetailsDTO toBookDetailsDTO(MediaItem.Book domain);
+
     MagazineDetailsDTO toMagazineDetailsDTO(MediaItem.Magazine domain);
+
     CdDetailsDTO toCdDetailsDTO(MediaItem.Cd domain);
+
     MovieDetailsDTO toMovieDetailsDTO(MediaItem.Movie domain);
 
 
@@ -81,11 +79,11 @@ public interface CatalogApiMapper {
     @Mapping(target = "totalCopies", constant = "0")
     @Mapping(target = ".", source = "value")
     MediaItem.Movie mapToDomainMovie(com.wesleyhome.library.server.model.catalog.MediaItemDTO.Movie api);
-    
+
     // Output Wrappers
     @Mapping(target = "item", source = ".")
     GetMediaOutputDTO toGetMediaOutputDTO(MediaItem domain);
-    
+
     @Mapping(target = "item", source = ".")
     AddMediaItemOutputDTO toAddMediaItemOutputDTO(MediaItem domain);
 }

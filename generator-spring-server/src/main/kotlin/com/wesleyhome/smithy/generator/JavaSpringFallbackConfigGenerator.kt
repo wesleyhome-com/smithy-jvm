@@ -1,10 +1,13 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.*
+import com.palantir.javapoet.AnnotationSpec
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.JavaFile
+import com.palantir.javapoet.MethodSpec
+import com.palantir.javapoet.TypeSpec
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.knowledge.TopDownIndex
-import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.utils.StringUtils
 import javax.lang.model.element.Modifier
@@ -19,7 +22,7 @@ class JavaSpringFallbackConfigGenerator : ShapeGenerator<ServiceShape> {
         val serviceSymbol = symbolProvider.toSymbol(shape)
         val topDownIndex = TopDownIndex.of(model)
         val operations = topDownIndex.getContainedOperations(shape).toList()
-        
+
         val className = "SpringDelegateFallbackConfiguration"
         // Base package or a config subpackage
         val packageName = "${serviceSymbol.namespace}.config"
@@ -29,9 +32,9 @@ class JavaSpringFallbackConfigGenerator : ShapeGenerator<ServiceShape> {
             .addAnnotation(ClassName.get("org.springframework.boot.autoconfigure", "AutoConfiguration"))
             .addJavadoc(
                 "Fallback configuration that provides default stub implementations for Smithy defined operations.\n" +
-                "<p>\n" +
-                "These stubs will be used by the generated controllers if no custom implementation\n" +
-                "is provided as a Spring Bean in the application context.\n"
+                    "<p>\n" +
+                    "These stubs will be used by the generated controllers if no custom implementation\n" +
+                    "is provided as a Spring Bean in the application context.\n"
             )
 
         for (operation in operations) {

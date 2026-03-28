@@ -3,17 +3,13 @@ package com.wesleyhome.library.server.mapper.db;
 import com.wesleyhome.library.db.tables.records.LoansRecord;
 import com.wesleyhome.library.db.tables.records.MediaItemsRecord;
 import com.wesleyhome.library.db.tables.records.PatronsRecord;
-import com.wesleyhome.library.server.domain.Loan;
-import com.wesleyhome.library.server.domain.LoanStatus;
-import com.wesleyhome.library.server.domain.MediaItem;
-import com.wesleyhome.library.server.domain.MembershipStatus;
-import com.wesleyhome.library.server.domain.Patron;
+import com.wesleyhome.library.server.domain.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.time.LocalDateTime;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +23,7 @@ class LoanDbMapperTest {
     @Test
     void toDomain_shouldMapJoinedRecordsCorrectly() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         LoansRecord loanRec = new LoansRecord();
         loanRec.setId("L1");
         loanRec.setStatus("ACTIVE");

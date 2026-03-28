@@ -1,6 +1,12 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.*
+import com.palantir.javapoet.AnnotationSpec
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.FieldSpec
+import com.palantir.javapoet.JavaFile
+import com.palantir.javapoet.MethodSpec
+import com.palantir.javapoet.ParameterSpec
+import com.palantir.javapoet.TypeSpec
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.StructureShape
@@ -23,7 +29,7 @@ class JavaExceptionGenerator(
 
         val symbol = symbolProvider.toSymbol(shape)
         val className = ClassName.get(symbol.namespace, symbol.name)
-        
+
         val typeBuilder = TypeSpec.classBuilder(className)
             .addModifiers(Modifier.PUBLIC)
             .superclass(RuntimeException::class.java)
@@ -31,18 +37,20 @@ class JavaExceptionGenerator(
         // Add fields for members (errors in Smithy are structures)
         for (member in shape.allMembers.values) {
             if (member.memberName.equals("message", ignoreCase = true)) continue
-            
+
             val memberSymbol = symbolProvider.toSymbol(member)
             val fieldName = symbolProvider.toMemberName(member)
             val typeName = memberSymbol.toTypeName()
-            
+
             typeBuilder.addField(FieldSpec.builder(typeName, fieldName, Modifier.PRIVATE, Modifier.FINAL).build())
-            
-            typeBuilder.addMethod(MethodSpec.methodBuilder("get${fieldName.replaceFirstChar { it.uppercase() }}")
-                .addModifiers(Modifier.PUBLIC)
-                .returns(typeName)
-                .addStatement("return this.\$L", fieldName)
-                .build())
+
+            typeBuilder.addMethod(
+                MethodSpec.methodBuilder("get${fieldName.replaceFirstChar { it.uppercase() }}")
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(typeName)
+                    .addStatement("return this.\$L", fieldName)
+                    .build()
+            )
         }
 
         // Add Standard Constructor
@@ -52,7 +60,7 @@ class JavaExceptionGenerator(
 
         for (member in shape.allMembers.values) {
             if (member.memberName.equals("message", ignoreCase = true)) continue
-            
+
             val memberSymbol = symbolProvider.toSymbol(member)
             val fieldName = symbolProvider.toMemberName(member)
             val typeName = memberSymbol.toTypeName()
@@ -62,41 +70,51 @@ class JavaExceptionGenerator(
         standardConstructor.addStatement("super(message)")
         for (member in shape.allMembers.values) {
             if (member.memberName.equals("message", ignoreCase = true)) continue
-            
+
             val fieldName = symbolProvider.toMemberName(member)
             standardConstructor.addStatement("this.\$L = \$L", fieldName, fieldName)
         }
-        
+
         typeBuilder.addMethod(standardConstructor.build())
 
         // Add DTO support for clean serialization
         generateDtoSupport(typeBuilder, className, shape, symbolProvider)
-        
+
         // Add constructor that takes the DTO for easy deserialization mapping
         val dtoConstructor = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
             .addParameter(className.nestedClass("Data"), "data")
-            .addStatement("this(data.message()\$L)", shape.allMembers.values
-                .filter { !it.memberName.equals("message", ignoreCase = true) }
-                .joinToString("") { ", data.${symbolProvider.toMemberName(it)}()" })
-        
+            .addStatement(
+                "this(data.message()\$L)", shape.allMembers.values
+                    .filter { !it.memberName.equals("message", ignoreCase = true) }
+                    .joinToString("") { ", data.${symbolProvider.toMemberName(it)}()" })
+
         typeBuilder.addMethod(dtoConstructor.build())
 
         val javaFile = JavaFile.builder(symbol.namespace, typeBuilder.build()).build()
         return ShapeGenerator.Result(listOf(javaFile.toGeneratedFile()))
     }
 
-    private fun generateDtoSupport(typeBuilder: TypeSpec.Builder, className: ClassName, shape: StructureShape, symbolProvider: SymbolProvider) {
+    private fun generateDtoSupport(
+        typeBuilder: TypeSpec.Builder,
+        className: ClassName,
+        shape: StructureShape,
+        symbolProvider: SymbolProvider
+    ) {
         val dtoRecordName = "Data"
         val jsonProperty = ClassName.get("com.fasterxml.jackson.annotation", "JsonProperty")
 
         val nonMessageMembers = shape.allMembers.values.filter { !it.memberName.equals("message", ignoreCase = true) }
 
         val recordParameters = mutableListOf<ParameterSpec>()
-        
+
         val messageParam = ParameterSpec.builder(String::class.java, "message")
         if (serializationLibrary == "jackson") {
-            messageParam.addAnnotation(AnnotationSpec.builder(jsonProperty).addMember("value", "\$S", "message").build())
+            messageParam.addAnnotation(
+                AnnotationSpec.builder(jsonProperty)
+                    .addMember("value", "\$S", "message")
+                    .build()
+            )
         }
         recordParameters.add(messageParam.build())
 
@@ -104,10 +122,14 @@ class JavaExceptionGenerator(
             val memberSymbol = symbolProvider.toSymbol(member)
             val fieldName = symbolProvider.toMemberName(member)
             val typeName = memberSymbol.toTypeName()
-            
+
             val paramBuilder = ParameterSpec.builder(typeName, fieldName)
             if (serializationLibrary == "jackson") {
-                paramBuilder.addAnnotation(AnnotationSpec.builder(jsonProperty).addMember("value", "\$S", member.memberName).build())
+                paramBuilder.addAnnotation(
+                    AnnotationSpec.builder(jsonProperty)
+                        .addMember("value", "\$S", member.memberName)
+                        .build()
+                )
             }
             recordParameters.add(paramBuilder.build())
         }
@@ -118,9 +140,11 @@ class JavaExceptionGenerator(
 
         val dtoRecord = TypeSpec.recordBuilder(dtoRecordName)
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .recordConstructor(MethodSpec.constructorBuilder()
-                .addParameters(recordParameters)
-                .build())
+            .recordConstructor(
+                MethodSpec.constructorBuilder()
+                    .addParameters(recordParameters)
+                    .build()
+            )
             .build()
 
         val toDtoMethod = MethodSpec.methodBuilder("toDto")

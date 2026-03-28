@@ -1,6 +1,9 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.*
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.JavaFile
+import com.palantir.javapoet.MethodSpec
+import com.palantir.javapoet.TypeSpec
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.EnumShape
@@ -29,7 +32,7 @@ class JavaEnumGenerator(
 
         val symbol = symbolProvider.toSymbol(shape)
         val className = ClassName.get(symbol.namespace, symbol.name)
-        
+
         val typeBuilder = TypeSpec.enumBuilder(className)
             .addModifiers(Modifier.PUBLIC)
 
@@ -44,7 +47,8 @@ class JavaEnumGenerator(
         if (shape is EnumShape) {
             for (member in shape.allMembers.values) {
                 val name = member.memberName
-                val value = member.expectTrait(software.amazon.smithy.model.traits.EnumValueTrait::class.java).stringValue.get()
+                val value =
+                    member.expectTrait(software.amazon.smithy.model.traits.EnumValueTrait::class.java).stringValue.get()
                 val enumConstantBuilder = TypeSpec.anonymousClassBuilder("\$S", value)
                 if (member.hasTrait(software.amazon.smithy.model.traits.DeprecatedTrait::class.java)) {
                     enumConstantBuilder.addAnnotation(Deprecated::class.java)
@@ -57,7 +61,8 @@ class JavaEnumGenerator(
         } else if (shape is IntEnumShape) {
             for (member in shape.allMembers.values) {
                 val name = member.memberName
-                val value = member.expectTrait(software.amazon.smithy.model.traits.EnumValueTrait::class.java).intValue.get()
+                val value =
+                    member.expectTrait(software.amazon.smithy.model.traits.EnumValueTrait::class.java).intValue.get()
                 val enumConstantBuilder = TypeSpec.anonymousClassBuilder("\$L", value)
                 if (member.hasTrait(software.amazon.smithy.model.traits.DeprecatedTrait::class.java)) {
                     enumConstantBuilder.addAnnotation(Deprecated::class.java)
@@ -86,7 +91,7 @@ class JavaEnumGenerator(
         // Add fallback constant for backward compatibility
         val fallbackValueStr = if (isIntEnum) "null" else "\$S"
         val fallbackValueArg = if (isIntEnum) emptyArray<Any>() else arrayOf("UNKNOWN_TO_SDK_VERSION")
-        
+
         val fallbackBuilder = TypeSpec.anonymousClassBuilder(fallbackValueStr, *fallbackValueArg)
         if (serializationLibrary == "jackson") {
             fallbackBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonEnumDefaultValue"))
@@ -95,32 +100,36 @@ class JavaEnumGenerator(
 
         // Add value field and constructor
         typeBuilder.addField(valueType, "value", Modifier.PRIVATE, Modifier.FINAL)
-        
-        typeBuilder.addMethod(MethodSpec.constructorBuilder()
-            .addParameter(valueType, "value")
-            .addStatement("this.value = value")
-            .build())
+
+        typeBuilder.addMethod(
+            MethodSpec.constructorBuilder()
+                .addParameter(valueType, "value")
+                .addStatement("this.value = value")
+                .build()
+        )
 
         // Add @JsonValue getter
         val getterBuilder = MethodSpec.methodBuilder("getValue")
             .addModifiers(Modifier.PUBLIC)
             .returns(valueType)
             .addStatement("return value")
-        
+
         if (serializationLibrary == "jackson") {
             getterBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"))
         }
 
         typeBuilder.addMethod(getterBuilder.build())
-        
+
         // Add toString for String enums specifically if needed
         if (!isIntEnum) {
-            typeBuilder.addMethod(MethodSpec.methodBuilder("toString")
-                .addAnnotation(Override::class.java)
-                .addModifiers(Modifier.PUBLIC)
-                .returns(String::class.java)
-                .addStatement("return String.valueOf(value)")
-                .build())
+            typeBuilder.addMethod(
+                MethodSpec.methodBuilder("toString")
+                    .addAnnotation(Override::class.java)
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(String::class.java)
+                    .addStatement("return String.valueOf(value)")
+                    .build()
+            )
         }
 
         // Add @JsonCreator factory method

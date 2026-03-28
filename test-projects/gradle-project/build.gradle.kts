@@ -1,6 +1,3 @@
-import org.jooq.meta.jaxb.MatcherRule
-import org.jooq.meta.jaxb.MatcherTransformType
-
 plugins {
     id("org.springframework.boot") version "4.0.4"
     id("io.spring.dependency-management") version "1.1.7"
@@ -57,7 +54,7 @@ dependencies {
 
 jooq {
     version = "3.20.11"
-    
+
     executions {
         create("main") {
             configuration {
@@ -108,7 +105,7 @@ sourceSets {
         val gsonClientPath = smithyOutput.dir("client_gson_jdk/java-client/")
         val okhttpClientPath = smithyOutput.dir("client_okhttp_jackson/java-client/")
         val bareClientPath = smithyOutput.dir("client_bare/java-client/")
-        
+
         resources {
             srcDir("model")
             srcDir(serverPath)
@@ -164,7 +161,7 @@ tasks.processTestResources {
 
 tasks.compileJava {
     dependsOn("smithyBuild", "jooqCodegen")
-    // The JOOQ plugin usually hooks into the build automatically, 
+    // The JOOQ plugin usually hooks into the build automatically,
     // but we ensure it runs before compilation.
 }
 

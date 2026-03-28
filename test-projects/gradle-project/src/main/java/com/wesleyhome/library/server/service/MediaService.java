@@ -38,7 +38,7 @@ public class MediaService {
     @Transactional
     public MediaItem addMediaItem(MediaItem item) {
         String id = item.id() != null ? item.id() : UUID.randomUUID().toString();
-        
+
         // Use mapper to populate the record from domain
         MediaItemsRecord record = mediaItemMapper.toRecord(item);
         record.setId(id); // Ensure ID is set

@@ -32,7 +32,7 @@ public class PatronService {
 
         record.setEmail(email);
         record.setPhone(phone);
-        
+
         patronRepository.save(record);
         return patronMapper.toDomain(record);
     }

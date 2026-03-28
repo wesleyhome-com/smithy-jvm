@@ -1,12 +1,8 @@
 package com.wesleyhome.library.server.mapper.api;
 
+import com.wesleyhome.library.server.domain.*;
 import com.wesleyhome.library.server.model.circulation.CheckOutItemOutputDTO;
 import com.wesleyhome.library.server.model.circulation.LoanRecordDTO;
-import com.wesleyhome.library.server.domain.Loan;
-import com.wesleyhome.library.server.domain.LoanStatus;
-import com.wesleyhome.library.server.domain.MediaItem;
-import com.wesleyhome.library.server.domain.MembershipStatus;
-import com.wesleyhome.library.server.domain.Patron;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

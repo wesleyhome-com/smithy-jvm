@@ -23,9 +23,9 @@ public class CirculationService {
     private final MediaRepository mediaRepository;
     private final LoanDbMapper loanMapper;
 
-    public CirculationService(LoanRepository loanRepository, 
-                              PatronRepository patronRepository, 
-                              MediaRepository mediaRepository, 
+    public CirculationService(LoanRepository loanRepository,
+                              PatronRepository patronRepository,
+                              MediaRepository mediaRepository,
                               LoanDbMapper loanMapper) {
         this.loanRepository = loanRepository;
         this.patronRepository = patronRepository;
@@ -53,7 +53,7 @@ public class CirculationService {
         loanRecord.setItemId(itemId);
         loanRecord.setDueDate(Instant.now().plus(14, ChronoUnit.DAYS).atOffset(ZoneOffset.UTC).toLocalDateTime());
         loanRecord.setStatus(LoanStatus.ACTIVE.name());
-        
+
         loanRepository.save(loanRecord);
 
         // Update item availability
@@ -69,7 +69,7 @@ public class CirculationService {
     public void checkIn(String loanId) {
         var loanRecord = loanRepository.findById(loanId)
                 .orElseThrow(() -> new RuntimeException("Loan not found"));
-        
+
         if (LoanStatus.RETURNED.name().equals(loanRecord.getStatus())) {
             return;
         }

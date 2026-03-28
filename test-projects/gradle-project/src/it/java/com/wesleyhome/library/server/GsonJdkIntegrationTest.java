@@ -14,7 +14,7 @@ public class GsonJdkIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testSearchCatalog() throws IOException {
         LibraryServiceClient client = LibraryServiceClient.create(getBaseUrl());
-        
+
         SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0, "integration-test");
         SearchCatalogOutputDTO response = client.searchCatalog(input);
 

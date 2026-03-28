@@ -13,10 +13,11 @@ import java.nio.file.Path
 
 class JavaSpringServerCodegenPluginTest {
 
-    @Test
-    fun `plugin generates files correctly`(@TempDir tempDir: Path) {
-        val model = Model.assembler()
-            .addUnparsedModel("test.smithy", """
+	@Test
+	fun `plugin generates files correctly`(@TempDir tempDir: Path) {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
                 namespace com.wesleyhome
                 service MyService {
                     version: "1.0",
@@ -37,39 +38,42 @@ class JavaSpringServerCodegenPluginTest {
                 structure SayHelloOutput {
                     greeting: String
                 }
-            """.trimIndent())
-            .assemble()
-            .unwrap()
-        
-        val manifest = MockManifest(tempDir)
-        val settings = Node.objectNodeBuilder()
-            .withMember("package", "com.wesleyhome.generated")
-            .withMember("service", "com.wesleyhome#MyService")
-            .build()
-            
-        val context = PluginContext.builder()
-            .model(model)
-            .fileManifest(manifest)
-            .settings(settings)
-            .build()
-            
-        val plugin = JavaSpringServerCodegenPlugin()
-        plugin.execute(context)
-        
-        // Check file locations
-        assertThat(manifest.hasFile("com/wesleyhome/generated/api/SayHelloApi.java")).isTrue()
-        assertThat(manifest.hasFile("com/wesleyhome/generated/controller/MyServiceController.java")).isTrue()
-        assertThat(manifest.hasFile("com/wesleyhome/generated/model/HelloPayloadDTO.java")).isTrue()
-        
-        val controllerCode = manifest.getFileString("com/wesleyhome/generated/controller/MyServiceController.java").get()
-        assertThat(controllerCode).contains("@RestController")
-        assertThat(controllerCode).contains("SayHelloApi sayHelloApi")
-    }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
 
-    @Test
-    fun `plugin supports tag-based subpackages`(@TempDir tempDir: Path) {
-        val model = Model.assembler()
-            .addUnparsedModel("test.smithy", """
+		val manifest = MockManifest(tempDir)
+		val settings = Node.objectNodeBuilder()
+			.withMember("package", "com.wesleyhome.generated")
+			.withMember("service", "com.wesleyhome#MyService")
+			.build()
+
+		val context = PluginContext.builder()
+			.model(model)
+			.fileManifest(manifest)
+			.settings(settings)
+			.build()
+
+		val plugin = JavaSpringServerCodegenPlugin()
+		plugin.execute(context)
+
+		// Check file locations
+		assertThat(manifest.hasFile("com/wesleyhome/generated/api/SayHelloApi.java")).isTrue()
+		assertThat(manifest.hasFile("com/wesleyhome/generated/controller/MyServiceController.java")).isTrue()
+		assertThat(manifest.hasFile("com/wesleyhome/generated/model/HelloPayloadDTO.java")).isTrue()
+
+		val controllerCode =
+			manifest.getFileString("com/wesleyhome/generated/controller/MyServiceController.java").get()
+		assertThat(controllerCode).contains("@RestController")
+		assertThat(controllerCode).contains("SayHelloApi sayHelloApi")
+	}
+
+	@Test
+	fun `plugin supports tag-based subpackages`(@TempDir tempDir: Path) {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
                 namespace com.wesleyhome
                 service MyService {
                     version: "1.0",
@@ -91,28 +95,29 @@ class JavaSpringServerCodegenPluginTest {
                     @httpPayload
                     payload: String
                 }
-            """.trimIndent())
-            .assemble()
-            .unwrap()
-        
-        val manifest = MockManifest(tempDir)
-        val settings = Node.objectNodeBuilder()
-            .withMember("package", "com.wesleyhome.generated")
-            .withMember("service", "com.wesleyhome#MyService")
-            .build()
-            
-        val context = PluginContext.builder()
-            .model(model)
-            .fileManifest(manifest)
-            .settings(settings)
-            .build()
-            
-        val plugin = JavaSpringServerCodegenPlugin()
-        plugin.execute(context)
-        
-        // Check tagged locations
-        assertThat(manifest.hasFile("com/wesleyhome/generated/api/admin/AdminOpApi.java")).isTrue()
-        assertThat(manifest.hasFile("com/wesleyhome/generated/model/admin/AdminOpInputDTO.java")).isTrue()
-        assertThat(manifest.hasFile("com/wesleyhome/generated/controller/AdminController.java")).isTrue()
-    }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
+
+		val manifest = MockManifest(tempDir)
+		val settings = Node.objectNodeBuilder()
+			.withMember("package", "com.wesleyhome.generated")
+			.withMember("service", "com.wesleyhome#MyService")
+			.build()
+
+		val context = PluginContext.builder()
+			.model(model)
+			.fileManifest(manifest)
+			.settings(settings)
+			.build()
+
+		val plugin = JavaSpringServerCodegenPlugin()
+		plugin.execute(context)
+
+		// Check tagged locations
+		assertThat(manifest.hasFile("com/wesleyhome/generated/api/admin/AdminOpApi.java")).isTrue()
+		assertThat(manifest.hasFile("com/wesleyhome/generated/model/admin/AdminOpInputDTO.java")).isTrue()
+		assertThat(manifest.hasFile("com/wesleyhome/generated/controller/AdminController.java")).isTrue()
+	}
 }

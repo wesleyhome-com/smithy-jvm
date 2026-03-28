@@ -1,15 +1,18 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.*
+import com.palantir.javapoet.ArrayTypeName
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.JavaFile
+import com.palantir.javapoet.ParameterizedTypeName
+import com.palantir.javapoet.TypeName
+import software.amazon.smithy.codegen.core.MappedReservedWords
+import software.amazon.smithy.codegen.core.ReservedWords
 import software.amazon.smithy.codegen.core.Symbol
 import software.amazon.smithy.model.shapes.MemberShape
 import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.traits.HttpHeaderTrait
 import software.amazon.smithy.model.traits.HttpLabelTrait
 import software.amazon.smithy.model.traits.HttpQueryTrait
-
-import software.amazon.smithy.codegen.core.MappedReservedWords
-import software.amazon.smithy.codegen.core.ReservedWords
 
 val JavaReservedWords: ReservedWords = MappedReservedWords.builder()
     .put("abstract", "abstract_")
@@ -71,10 +74,10 @@ val JavaReservedWords: ReservedWords = MappedReservedWords.builder()
     .build()
 
 fun StructureShape.getMetadataAndPayload(): Pair<List<MemberShape>, List<MemberShape>> {
-    val metadataMembers = this.allMembers.values.filter { 
+    val metadataMembers = this.allMembers.values.filter {
         it.hasTrait(HttpLabelTrait::class.java) ||
-        it.hasTrait(HttpQueryTrait::class.java) ||
-        it.hasTrait(HttpHeaderTrait::class.java)
+            it.hasTrait(HttpQueryTrait::class.java) ||
+            it.hasTrait(HttpHeaderTrait::class.java)
     }
     val payloadMembers = this.allMembers.values.filter { !metadataMembers.contains(it) }
     return Pair(metadataMembers, payloadMembers)
@@ -88,7 +91,11 @@ fun Symbol.toTypeName(): TypeName {
     if (this.name == "Map") {
         val keySymbol = this.getProperty("keySymbol", Symbol::class.java).get()
         val valueSymbol = this.getProperty("valueSymbol", Symbol::class.java).get()
-        return ParameterizedTypeName.get(ClassName.get("java.util", "Map"), keySymbol.toTypeName(), valueSymbol.toTypeName())
+        return ParameterizedTypeName.get(
+            ClassName.get("java.util", "Map"),
+            keySymbol.toTypeName(),
+            valueSymbol.toTypeName()
+        )
     }
     return getBaseTypeName(this.name, this.namespace)
 }

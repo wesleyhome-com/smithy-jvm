@@ -58,11 +58,11 @@ public class ReservationService {
 
         return reservationRepository.findByPatronId(patronId).stream()
                 .map(r -> new Reservation(
-                        r.getId(), 
-                        patron, 
-                        r.getResourceId(), 
+                        r.getId(),
+                        patron,
+                        r.getResourceId(),
                         Instant.now(), // Simplified for example
-                        r.getDurationMinutes(), 
+                        r.getDurationMinutes(),
                         ReservationStatus.valueOf(r.getStatus())))
                 .collect(Collectors.toList());
     }

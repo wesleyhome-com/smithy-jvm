@@ -1,18 +1,9 @@
 package com.wesleyhome.smithy.generator
 
-import java.util.logging.Logger
 import software.amazon.smithy.build.PluginContext
 import software.amazon.smithy.build.SmithyBuildPlugin
-import software.amazon.smithy.codegen.core.ReservedWordSymbolProvider
-import software.amazon.smithy.codegen.core.SymbolProvider
-import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.shapes.ServiceShape
-import software.amazon.smithy.model.shapes.Shape
-import software.amazon.smithy.model.shapes.ShapeId
-import software.amazon.smithy.model.neighbor.Walker
-import software.amazon.smithy.model.transform.ModelTransformer
 import software.amazon.smithy.model.validation.ValidatedResultException
-import software.amazon.smithy.model.validation.ValidationEvent
+import java.util.logging.Logger
 
 /**
  * A Smithy build plugin that generates Spring Boot 3/4 Java code from a Smithy model.
@@ -63,7 +54,7 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
         val configPackage = "${result.basePackage}.config"
         val importsPath = "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports"
         val fullClassName = "$configPackage.$configClassName"
-        
+
         // We write the imports only if we actually generated the fallback config.
         if (result.files.any { it.path.endsWith("$configClassName.java") }) {
             manifest.writeFile(importsPath, fullClassName + "\n")

@@ -29,14 +29,14 @@ public class MediaRepository {
 
     public List<MediaItemsRecord> findAll(String query, String type, int limit, int offset) {
         var select = dsl.selectFrom(MEDIA_ITEMS);
-        
+
         if (query != null && !query.isBlank()) {
             select.where(MEDIA_ITEMS.TITLE.containsIgnoreCase(query));
         }
         if (type != null) {
             select.where(MEDIA_ITEMS.MEDIA_TYPE.eq(type));
         }
-        
+
         return select.limit(limit).offset(offset).fetch();
     }
 

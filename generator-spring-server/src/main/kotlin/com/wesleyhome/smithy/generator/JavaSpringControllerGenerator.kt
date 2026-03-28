@@ -1,6 +1,14 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.*
+import com.palantir.javapoet.AnnotationSpec
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.CodeBlock
+import com.palantir.javapoet.FieldSpec
+import com.palantir.javapoet.JavaFile
+import com.palantir.javapoet.MethodSpec
+import com.palantir.javapoet.ParameterSpec
+import com.palantir.javapoet.ParameterizedTypeName
+import com.palantir.javapoet.TypeSpec
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.knowledge.TopDownIndex
@@ -8,7 +16,13 @@ import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.StructureShape
-import software.amazon.smithy.model.traits.*
+import software.amazon.smithy.model.traits.DefaultTrait
+import software.amazon.smithy.model.traits.HttpHeaderTrait
+import software.amazon.smithy.model.traits.HttpLabelTrait
+import software.amazon.smithy.model.traits.HttpQueryTrait
+import software.amazon.smithy.model.traits.HttpTrait
+import software.amazon.smithy.model.traits.RequiredTrait
+import software.amazon.smithy.model.traits.TagsTrait
 import software.amazon.smithy.model.validation.Severity
 import software.amazon.smithy.model.validation.ValidationEvent
 import software.amazon.smithy.utils.StringUtils
@@ -32,11 +46,11 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
     override fun generate(shape: ServiceShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
         val validationEvents = mutableListOf<ValidationEvent>()
         val generatedFiles = mutableListOf<GeneratedFile>()
-        
+
         val serviceSymbol = symbolProvider.toSymbol(shape)
         val topDownIndex = TopDownIndex.of(model)
         val operations = topDownIndex.getContainedOperations(shape).toList()
-        
+
         // Group Operations by Tag for Controllers
         val groupedOperations = operations.groupBy { getPrimaryTag(it) }
 
@@ -80,7 +94,10 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
             val fieldName = StringUtils.uncapitalize(apiInterfaceName)
 
             // Add Field
-            typeBuilder.addField(FieldSpec.builder(apiInterfaceType, fieldName, Modifier.PRIVATE, Modifier.FINAL).build())
+            typeBuilder.addField(
+                FieldSpec.builder(apiInterfaceType, fieldName, Modifier.PRIVATE, Modifier.FINAL)
+                    .build()
+            )
             // Add Constructor Parameter
             constructorBuilder.addParameter(apiInterfaceType, fieldName)
             constructorBuilder.addStatement("this.\$L = \$L", fieldName, fieldName)
@@ -100,14 +117,14 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                     "PATCH" -> "PatchMapping"
                     else -> "RequestMapping"
                 }
-                
+
                 val httpAnnotation = AnnotationSpec.builder(ClassName.get(springWeb, annotationName))
                     .addMember("value", "\$S", httpTrait.uri.toString())
-                
+
                 if (annotationName == "RequestMapping") {
                     httpAnnotation.addMember("method", "RequestMethod.\$L", httpTrait.method.uppercase())
                 }
-                
+
                 methodBuilder.addAnnotation(httpAnnotation.build())
             }
 
@@ -116,7 +133,7 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
             operation.input.ifPresent { inputId ->
                 val inputShape = model.expectShape(inputId, StructureShape::class.java)
                 val (metadataMembers, payloadMembers) = inputShape.getMetadataAndPayload()
-                
+
                 if (payloadMembers.size > 1) {
                     val event = ValidationEvent.builder()
                         .id("MultiplePayloadMembers")
@@ -136,15 +153,17 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                     val paramBuilder = ParameterSpec.builder(typeName, paramName).addAnnotation(jakartaValid)
 
                     if (member.hasTrait(HttpLabelTrait::class.java)) {
-                        paramBuilder.addAnnotation(AnnotationSpec.builder(pathVariable)
-                            .addMember("value", "\$S", paramName)
-                            .build())
+                        paramBuilder.addAnnotation(
+                            AnnotationSpec.builder(pathVariable)
+                                .addMember("value", "\$S", paramName)
+                                .build()
+                        )
                     } else if (member.hasTrait(HttpQueryTrait::class.java)) {
                         val queryTrait = member.expectTrait(HttpQueryTrait::class.java)
                         val annotationBuilder = AnnotationSpec.builder(requestParam)
                             .addMember("value", "\$S", queryTrait.value)
                             .addMember("required", "\$L", member.hasTrait(RequiredTrait::class.java))
-                        
+
                         member.getTrait(DefaultTrait::class.java).ifPresent { defaultTrait ->
                             val node = defaultTrait.toNode()
                             val valueStr = if (node.isStringNode) {
@@ -154,14 +173,16 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                             }
                             annotationBuilder.addMember("defaultValue", "\$S", valueStr)
                         }
-                        
+
                         paramBuilder.addAnnotation(annotationBuilder.build())
                     } else if (member.hasTrait(HttpHeaderTrait::class.java)) {
                         val headerTrait = member.expectTrait(HttpHeaderTrait::class.java)
-                        paramBuilder.addAnnotation(AnnotationSpec.builder(requestHeader)
-                            .addMember("value", "\$S", headerTrait.value)
-                            .addMember("required", "\$L", member.hasTrait(RequiredTrait::class.java))
-                            .build())
+                        paramBuilder.addAnnotation(
+                            AnnotationSpec.builder(requestHeader)
+                                .addMember("value", "\$S", headerTrait.value)
+                                .addMember("required", "\$L", member.hasTrait(RequiredTrait::class.java))
+                                .build()
+                        )
                     }
                     methodBuilder.addParameter(paramBuilder.build())
                 }
@@ -171,10 +192,12 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                     val memberSymbol = symbolProvider.toSymbol(member)
                     val paramName = symbolProvider.toMemberName(member)
                     val typeName = memberSymbol.toTypeName()
-                    methodBuilder.addParameter(ParameterSpec.builder(typeName, paramName)
-                        .addAnnotation(jakartaValid)
-                        .addAnnotation(requestBody)
-                        .build())
+                    methodBuilder.addParameter(
+                        ParameterSpec.builder(typeName, paramName)
+                            .addAnnotation(jakartaValid)
+                            .addAnnotation(requestBody)
+                            .build()
+                    )
                 }
             }
 
@@ -184,7 +207,7 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
             val callArgs = operation.input.map { inputId ->
                 val inputShape = model.expectShape(inputId, StructureShape::class.java)
                 val (metadataMembers, payloadMembers) = inputShape.getMetadataAndPayload()
-                
+
                 (metadataMembers + payloadMembers)
                     .joinToString(", ") { symbolProvider.toMemberName(it) }
             }.orElse("")
@@ -196,23 +219,34 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
             if (outputSymbol != null) {
                 val outputTypeName = outputSymbol.toTypeName()
                 val outputShape = model.expectShape(operation.output.get(), StructureShape::class.java)
-                
+
                 methodBuilder.returns(ParameterizedTypeName.get(responseEntity, outputTypeName))
-                methodBuilder.addStatement("\$T result = \$L.\$L(\$L)", outputTypeName, fieldName, operationMethodName, callArgs)
-                
+                methodBuilder.addStatement(
+                    "\$T result = \$L.\$L(\$L)",
+                    outputTypeName,
+                    fieldName,
+                    operationMethodName,
+                    callArgs
+                )
+
                 val builderChain = CodeBlock.builder().add("\$T.ok()", responseEntity)
-                
+
                 val (metadataMembers, _) = outputShape.getMetadataAndPayload()
                 for (member in metadataMembers.filter { it.hasTrait(HttpHeaderTrait::class.java) }) {
                     val headerName = member.expectTrait(HttpHeaderTrait::class.java).value
                     val getterName = symbolProvider.toMemberName(member)
                     // DTO is a record, so we use getterName()
-                    builderChain.add("\n.header(\$S, \$T.valueOf(result.\$L()))", headerName, String::class.java, getterName)
+                    builderChain.add(
+                        "\n.header(\$S, \$T.valueOf(result.\$L()))",
+                        headerName,
+                        String::class.java,
+                        getterName
+                    )
                 }
-                
+
                 builderChain.add("\n.body(result)")
                 methodBuilder.addStatement("return \$L", builderChain.build())
-                
+
             } else {
                 methodBuilder.returns(ParameterizedTypeName.get(responseEntity, ClassName.get("java.lang", "Void")))
                 methodBuilder.addStatement("\$L.\$L(\$L)", fieldName, operationMethodName, callArgs)

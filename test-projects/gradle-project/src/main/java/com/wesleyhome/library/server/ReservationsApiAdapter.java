@@ -3,11 +3,11 @@ package com.wesleyhome.library.server;
 import com.wesleyhome.library.server.api.reservations.CancelReservationApi;
 import com.wesleyhome.library.server.api.reservations.ListReservationsApi;
 import com.wesleyhome.library.server.api.reservations.ReserveComputerApi;
+import com.wesleyhome.library.server.mapper.api.ReservationApiMapper;
 import com.wesleyhome.library.server.model.reservations.CancelReservationOutputDTO;
 import com.wesleyhome.library.server.model.reservations.ComputerReservationDetailsDTO;
 import com.wesleyhome.library.server.model.reservations.ListReservationsOutputDTO;
 import com.wesleyhome.library.server.model.reservations.ReserveComputerOutputDTO;
-import com.wesleyhome.library.server.mapper.api.ReservationApiMapper;
 import com.wesleyhome.library.server.service.ReservationService;
 import org.springframework.stereotype.Service;
 
@@ -25,10 +25,10 @@ public class ReservationsApiAdapter implements ReserveComputerApi, ListReservati
     @Override
     public ReserveComputerOutputDTO reserveComputer(ComputerReservationDetailsDTO request) {
         var res = reservationService.reserve(
-            request.patronId(), 
-            request.computerId(), 
-            request.startTime(), 
-            request.durationMinutes()
+                request.patronId(),
+                request.computerId(),
+                request.startTime(),
+                request.durationMinutes()
         );
         return apiMapper.toReserveComputerOutputDTO(res);
     }

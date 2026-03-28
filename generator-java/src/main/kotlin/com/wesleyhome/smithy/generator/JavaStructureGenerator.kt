@@ -1,14 +1,26 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.*
+import com.palantir.javapoet.AnnotationSpec
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.JavaFile
+import com.palantir.javapoet.MethodSpec
+import com.palantir.javapoet.ParameterSpec
+import com.palantir.javapoet.TypeSpec
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.shapes.MemberShape
-import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.ListShape
 import software.amazon.smithy.model.shapes.MapShape
+import software.amazon.smithy.model.shapes.MemberShape
+import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
-import software.amazon.smithy.model.traits.*
+import software.amazon.smithy.model.traits.DefaultTrait
+import software.amazon.smithy.model.traits.DeprecatedTrait
+import software.amazon.smithy.model.traits.DocumentationTrait
+import software.amazon.smithy.model.traits.ErrorTrait
+import software.amazon.smithy.model.traits.LengthTrait
+import software.amazon.smithy.model.traits.PatternTrait
+import software.amazon.smithy.model.traits.RangeTrait
+import software.amazon.smithy.model.traits.RequiredTrait
 import javax.lang.model.element.Modifier
 
 /**
@@ -31,7 +43,7 @@ class JavaStructureGenerator(
 
         val symbol = symbolProvider.toSymbol(shape)
         val className = ClassName.get(symbol.namespace, symbol.name)
-        
+
         val recordParameters = shape.allMembers.values.map { member ->
             val memberSymbol = symbolProvider.toSymbol(member)
             val fieldName = symbolProvider.toMemberName(member)
@@ -47,34 +59,38 @@ class JavaStructureGenerator(
             }
 
             if (serializationLibrary == "jackson") {
-                paramBuilder.addAnnotation(AnnotationSpec.builder(jsonProperty)
-                    .addMember("value", "\$S", member.memberName)
-                    .build())
+                paramBuilder.addAnnotation(
+                    AnnotationSpec.builder(jsonProperty)
+                        .addMember("value", "\$S", member.memberName)
+                        .build()
+                )
             }
 
             paramBuilder.build()
         }
         val typeBuilder = TypeSpec.recordBuilder(className)
             .addModifiers(Modifier.PUBLIC)
-        
+
         if (shape.hasTrait(DeprecatedTrait::class.java)) {
             typeBuilder.addAnnotation(Deprecated::class.java)
         }
-        
+
         applyDocumentation(typeBuilder, shape)
 
         // Define the record components via the recordConstructor
-        typeBuilder.recordConstructor(MethodSpec.constructorBuilder()
-            .addParameters(recordParameters)
-            .build())
+        typeBuilder.recordConstructor(
+            MethodSpec.constructorBuilder()
+                .addParameters(recordParameters)
+                .build()
+        )
 
         // Add a compact constructor for handling @default values if any are present
         val hasDefaults = shape.allMembers.values.any { it.hasTrait(DefaultTrait::class.java) }
-        
+
         if (hasDefaults) {
             val compactConstructor = MethodSpec.compactConstructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
-            
+
             for (member in shape.allMembers.values) {
                 member.getTrait(DefaultTrait::class.java).ifPresent { defaultTrait ->
                     val fieldName = symbolProvider.toMemberName(member)
@@ -122,24 +138,32 @@ class JavaStructureGenerator(
 
         member.getTrait(RangeTrait::class.java).ifPresent { trait ->
             if (trait.min.isPresent && trait.max.isPresent) {
-                fieldBuilder.addAnnotation(AnnotationSpec.builder(ClassName.get("org.hibernate.validator.constraints", "Range"))
-                    .addMember("min", "\$L", trait.min.get())
-                    .addMember("max", "\$L", trait.max.get()).build())
+                fieldBuilder.addAnnotation(
+                    AnnotationSpec.builder(ClassName.get("org.hibernate.validator.constraints", "Range"))
+                        .addMember("min", "\$L", trait.min.get())
+                        .addMember("max", "\$L", trait.max.get()).build()
+                )
             } else {
-                trait.min.ifPresent { 
-                    fieldBuilder.addAnnotation(AnnotationSpec.builder(ClassName.get(constraints, "Min"))
-                        .addMember("value", "\$L", it).build()) 
+                trait.min.ifPresent {
+                    fieldBuilder.addAnnotation(
+                        AnnotationSpec.builder(ClassName.get(constraints, "Min"))
+                            .addMember("value", "\$L", it).build()
+                    )
                 }
-                trait.max.ifPresent { 
-                    fieldBuilder.addAnnotation(AnnotationSpec.builder(ClassName.get(constraints, "Max"))
-                        .addMember("value", "\$L", it).build()) 
+                trait.max.ifPresent {
+                    fieldBuilder.addAnnotation(
+                        AnnotationSpec.builder(ClassName.get(constraints, "Max"))
+                            .addMember("value", "\$L", it).build()
+                    )
                 }
             }
         }
 
         member.getTrait(PatternTrait::class.java).ifPresent { trait ->
-            fieldBuilder.addAnnotation(AnnotationSpec.builder(ClassName.get(constraints, "Pattern"))
-                .addMember("regexp", "\$S", trait.value).build())
+            fieldBuilder.addAnnotation(
+                AnnotationSpec.builder(ClassName.get(constraints, "Pattern"))
+                    .addMember("regexp", "\$S", trait.value).build()
+            )
         }
 
         // Add @Valid for nested structures or collections of structures

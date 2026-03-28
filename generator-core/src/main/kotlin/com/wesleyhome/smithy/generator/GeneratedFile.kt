@@ -5,6 +5,6 @@ package com.wesleyhome.smithy.generator
  * This decouples the core plugin from language-specific AST builders like JavaPoet or KotlinPoet.
  */
 data class GeneratedFile(
-    val path: String,
-    val content: String
+	val path: String,
+	val content: String
 )

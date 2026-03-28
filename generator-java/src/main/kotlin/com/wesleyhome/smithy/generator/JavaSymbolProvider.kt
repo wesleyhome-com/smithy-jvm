@@ -1,16 +1,20 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.ClassName
 import software.amazon.smithy.codegen.core.Symbol
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.shapes.*
+import software.amazon.smithy.model.shapes.ListShape
+import software.amazon.smithy.model.shapes.MapShape
+import software.amazon.smithy.model.shapes.MemberShape
+import software.amazon.smithy.model.shapes.ServiceShape
+import software.amazon.smithy.model.shapes.Shape
+import software.amazon.smithy.model.shapes.ShapeType
 import software.amazon.smithy.model.traits.EnumTrait
 import software.amazon.smithy.model.traits.TagsTrait
 import software.amazon.smithy.utils.StringUtils
 
 class JavaSymbolProvider(
-    private val model: Model, 
+    private val model: Model,
     private val basePackage: String,
     private val dtoSuffix: String = "DTO",
     private val serviceShape: ServiceShape? = null
@@ -18,7 +22,7 @@ class JavaSymbolProvider(
 
     override fun toSymbol(shape: Shape): Symbol {
         val builder = Symbol.builder().putProperty("shape", shape)
-        
+
         if (shape is MemberShape) {
             val target = model.expectShape(shape.target)
             return toSymbol(target).toBuilder().putProperty("shape", shape).build()
@@ -28,7 +32,7 @@ class JavaSymbolProvider(
         // Use service shape for safe renames if available
         val shapeName = if (serviceShape != null) shape.id.getName(serviceShape) else shape.id.name
         val capitalizedName = StringUtils.capitalize(shapeName)
-        
+
         when (shape.type) {
             ShapeType.STRING -> {
                 if (shape.hasTrait(EnumTrait::class.java)) {
@@ -38,6 +42,7 @@ class JavaSymbolProvider(
                     builder.name("String").namespace("java.lang", ".")
                 }
             }
+
             ShapeType.INTEGER -> builder.name("Integer").namespace("java.lang", ".")
             ShapeType.LONG -> builder.name("Long").namespace("java.lang", ".")
             ShapeType.SHORT -> builder.name("Short").namespace("java.lang", ".")
@@ -54,16 +59,18 @@ class JavaSymbolProvider(
                 val member = (shape as ListShape).member
                 val memberSymbol = toSymbol(model.expectShape(member.target))
                 builder.name("List").namespace("java.util", ".")
-                       .putProperty("memberSymbol", memberSymbol)
+                    .putProperty("memberSymbol", memberSymbol)
             }
+
             ShapeType.MAP -> {
                 val mapShape = shape as MapShape
                 val keySymbol = toSymbol(model.expectShape(mapShape.key.target))
                 val valueSymbol = toSymbol(model.expectShape(mapShape.value.target))
                 builder.name("Map").namespace("java.util", ".")
-                       .putProperty("keySymbol", keySymbol)
-                       .putProperty("valueSymbol", valueSymbol)
+                    .putProperty("keySymbol", keySymbol)
+                    .putProperty("valueSymbol", valueSymbol)
             }
+
             ShapeType.STRUCTURE, ShapeType.UNION, ShapeType.ENUM -> {
                 val name = if (shape.hasTrait(software.amazon.smithy.model.traits.ErrorTrait::class.java)) {
                     capitalizedName
@@ -72,20 +79,24 @@ class JavaSymbolProvider(
                 }
                 builder.name(name).namespace("$basePackage.model$tagSuffix", ".")
             }
+
             ShapeType.INT_ENUM -> {
                 val name = capitalizedName + dtoSuffix
                 builder.name(name).namespace("$basePackage.model$tagSuffix", ".")
             }
+
             ShapeType.OPERATION -> {
                 val name = capitalizedName + "Api"
                 builder.name(name).namespace("$basePackage.api$tagSuffix", ".")
             }
+
             ShapeType.SERVICE -> {
                 builder.name(capitalizedName).namespace(basePackage, ".")
             }
+
             else -> builder.name("Object").namespace("java.lang", ".")
         }
-        
+
         return builder.build()
     }
 
@@ -95,7 +106,7 @@ class JavaSymbolProvider(
 
     private fun getTagSuffix(shape: Shape): String {
         return shape.getTrait(TagsTrait::class.java)
-            .map { tags -> 
+            .map { tags ->
                 if (tags.values.isNotEmpty()) {
                     "." + tags.values[0].lowercase().replace(" ", "")
                 } else ""
