@@ -6,7 +6,6 @@ class SpringServerIntegration : JavaCodegenIntegration {
     override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.SERVER
 
     override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
-        val serializationLibrary = "jackson"
         return listOf(
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_STRUCTURES,
@@ -14,15 +13,15 @@ class SpringServerIntegration : JavaCodegenIntegration {
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_EXCEPTIONS,
-                generators = listOf(JavaExceptionGenerator(serializationLibrary, context))
+                generators = listOf(JavaExceptionGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_ENUMS,
-                generators = listOf(JavaEnumGenerator(serializationLibrary, context))
+                generators = listOf(JavaEnumGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_UNIONS,
-                generators = listOf(JavaUnionGenerator(serializationLibrary, context))
+                generators = listOf(JavaUnionGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_API,

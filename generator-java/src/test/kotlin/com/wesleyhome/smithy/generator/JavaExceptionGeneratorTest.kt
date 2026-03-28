@@ -4,6 +4,8 @@ import assertk.assertThat
 import assertk.assertions.contains
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
+import software.amazon.smithy.model.node.Node
+import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.model.shapes.ShapeId
 import software.amazon.smithy.model.shapes.StructureShape
 
@@ -29,8 +31,9 @@ class JavaExceptionGeneratorTest {
 		val shapeId = ShapeId.from("com.wesleyhome#NotFoundError")
 		val shape = model.expectShape(shapeId, StructureShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+		val context = createContext(model, symbolProvider, "jackson")
 
-		val generator = JavaExceptionGenerator()
+		val generator = JavaExceptionGenerator(context)
 		val generatedFiles = generator.generate(shape, model, symbolProvider)
 		val code = generatedFiles.files.first().content
 
@@ -64,8 +67,9 @@ class JavaExceptionGeneratorTest {
 		val shapeId = ShapeId.from("com.wesleyhome#InvalidInputError")
 		val shape = model.expectShape(shapeId, StructureShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+		val context = createContext(model, symbolProvider, "jackson")
 
-		val generator = JavaExceptionGenerator()
+		val generator = JavaExceptionGenerator(context)
 		val generatedFiles = generator.generate(shape, model, symbolProvider)
 		val code = generatedFiles.files.first().content
 
@@ -77,5 +81,23 @@ class JavaExceptionGeneratorTest {
 		assertThat(code).contains("public static record Data(@JsonProperty(\"message\") String message,\n      @JsonProperty(\"reason\") String reason) {")
 		assertThat(code).contains("public Data toDto() {")
 		assertThat(code).contains("return new Data(getMessage(), reason);")
+	}
+
+	private fun createContext(
+		model: Model,
+		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider,
+		serializationLibrary: String
+	): JavaCodegenContext {
+		val serviceShape = ServiceShape.builder().id("com.wesleyhome#TestService").version("1.0").build()
+		val settings = Node.objectNodeBuilder().withMember("serializationLibrary", serializationLibrary).build()
+		val integrations = listOf<JavaCodegenIntegration>(JacksonIntegration())
+		return JavaCodegenContext(
+			model = model,
+			settings = JavaSettings.from(settings),
+			serviceShape = serviceShape,
+			symbolProvider = symbolProvider,
+			integrations = integrations,
+			target = JavaCodegenTarget.MODEL
+		)
 	}
 }

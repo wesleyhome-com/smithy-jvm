@@ -6,7 +6,6 @@ class ModelIntegration : JavaCodegenIntegration {
     override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.MODEL
 
     override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
-        val serializationLibrary = context.settings.getString("serializationLibrary") ?: "jackson"
         return listOf(
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_STRUCTURES,
@@ -18,11 +17,11 @@ class ModelIntegration : JavaCodegenIntegration {
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_ENUMS,
-                generators = listOf(JavaEnumGenerator(serializationLibrary, context))
+                generators = listOf(JavaEnumGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_UNIONS,
-                generators = listOf(JavaUnionGenerator(serializationLibrary, context))
+                generators = listOf(JavaUnionGenerator(context))
             )
         )
     }

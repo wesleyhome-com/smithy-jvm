@@ -17,7 +17,6 @@ import javax.lang.model.element.Modifier
  * Generates a Java enum for Smithy 2 `enum` and `intEnum` shapes.
  */
 class JavaEnumGenerator(
-    private val serializationLibrary: String = "jackson",
     private val codegenContext: JavaCodegenContext? = null
 ) : ShapeGenerator<Shape> {
     override val shapeType: Class<Shape> = Shape::class.java
@@ -79,8 +78,10 @@ class JavaEnumGenerator(
         val fallbackValueArg = if (isIntEnum) emptyArray<Any>() else arrayOf("UNKNOWN_TO_SDK_VERSION")
 
         val fallbackBuilder = TypeSpec.anonymousClassBuilder(fallbackValueStr, *fallbackValueArg)
-        if (serializationLibrary == "jackson") {
-            fallbackBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonEnumDefaultValue"))
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onEnumUnknownConstantGenerated(ctx, shape, fallbackBuilder)
+            }
         }
         typeBuilder.addEnumConstant("UNKNOWN_TO_SDK_VERSION", fallbackBuilder.build())
 
@@ -99,9 +100,10 @@ class JavaEnumGenerator(
             .addModifiers(Modifier.PUBLIC)
             .returns(valueType)
             .addStatement("return value")
-
-        if (serializationLibrary == "jackson") {
-            getterBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"))
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onEnumValueGetterGenerated(ctx, shape, getterBuilder)
+            }
         }
 
         typeBuilder.addMethod(getterBuilder.build())
@@ -132,9 +134,10 @@ class JavaEnumGenerator(
             .endControlFlow()
             .endControlFlow()
             .addStatement("return UNKNOWN_TO_SDK_VERSION")
-
-        if (serializationLibrary == "jackson") {
-            creatorBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonCreator"))
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onEnumFromValueGenerated(ctx, shape, creatorBuilder)
+            }
         }
 
         typeBuilder.addMethod(creatorBuilder.build())

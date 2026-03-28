@@ -15,15 +15,15 @@ class ClientIntegration : JavaCodegenIntegration {
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_EXCEPTIONS,
-                generators = listOf(JavaExceptionGenerator(serializationLibrary, context))
+                generators = listOf(JavaExceptionGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_ENUMS,
-                generators = listOf(JavaEnumGenerator(serializationLibrary, context))
+                generators = listOf(JavaEnumGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_UNIONS,
-                generators = listOf(JavaUnionGenerator(serializationLibrary, context))
+                generators = listOf(JavaUnionGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_CORE,

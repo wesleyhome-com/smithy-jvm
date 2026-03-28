@@ -1,6 +1,5 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.AnnotationSpec
 import com.palantir.javapoet.ClassName
 import com.palantir.javapoet.JavaFile
 import com.palantir.javapoet.MethodSpec
@@ -15,7 +14,6 @@ import javax.lang.model.element.Modifier
  * Generates a Java sealed interface for a Smithy UnionShape.
  */
 class JavaUnionGenerator(
-    private val serializationLibrary: String = "jackson",
     private val codegenContext: JavaCodegenContext? = null
 ) : ShapeGenerator<UnionShape> {
     override val shapeType: Class<UnionShape> = UnionShape::class.java
@@ -30,41 +28,17 @@ class JavaUnionGenerator(
         val typeBuilder = TypeSpec.interfaceBuilder(className)
             .addModifiers(Modifier.PUBLIC, Modifier.SEALED)
 
-        if (serializationLibrary == "jackson") {
-            typeBuilder.addAnnotation(
-                AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
-                    .addMember("use", $$"$T.Id.NAME", ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
-                    .addMember(
-                        "include",
-                        $$"$T.As.WRAPPER_OBJECT",
-                        ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo")
-                    )
-                    .addMember("defaultImpl", $$"$T.class", unknownClassName)
-                    .build()
-            )
-        }
-
         if (shape.hasTrait(software.amazon.smithy.model.traits.DeprecatedTrait::class.java)) {
             typeBuilder.addAnnotation(Deprecated::class.java)
         }
-
-        val subTypesBuilder = AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonSubTypes"))
+        val variants = mutableListOf<JavaUnionVariant>()
 
         for (member in shape.allMembers.values) {
             val memberName = StringUtils.capitalize(member.memberName)
             val variantClassName = className.nestedClass(memberName)
             val memberSymbol = symbolProvider.toSymbol(member)
             val typeName = memberSymbol.toTypeName()
-
-            if (serializationLibrary == "jackson") {
-                subTypesBuilder.addMember(
-                    "value", $$"$L",
-                    AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonSubTypes", "Type"))
-                        .addMember("value", $$"$T.class", variantClassName)
-                        .addMember("name", $$"$S", member.memberName)
-                        .build()
-                )
-            }
+            variants.add(JavaUnionVariant(member, variantClassName))
 
             val recordBuilder = TypeSpec.recordBuilder(memberName)
                 .addModifiers(Modifier.FINAL, Modifier.PUBLIC, Modifier.STATIC)
@@ -91,9 +65,10 @@ class JavaUnionGenerator(
 
         typeBuilder.addType(unknownBuilder.build())
         typeBuilder.addPermittedSubclass(unknownClassName)
-
-        if (serializationLibrary == "jackson") {
-            typeBuilder.addAnnotation(subTypesBuilder.build())
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onUnionGenerated(ctx, shape, typeBuilder, unknownClassName, variants)
+            }
         }
         codegenContext?.let { ctx ->
             ctx.integrations.forEach { integration ->

@@ -1,6 +1,5 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.AnnotationSpec
 import com.palantir.javapoet.ClassName
 import com.palantir.javapoet.FieldSpec
 import com.palantir.javapoet.JavaFile
@@ -17,7 +16,6 @@ import javax.lang.model.element.Modifier
  * Generates a Java exception for a Smithy StructureShape with the @error trait.
  */
 class JavaExceptionGenerator(
-    private val serializationLibrary: String = "jackson",
     private val codegenContext: JavaCodegenContext? = null
 ) : ShapeGenerator<StructureShape> {
     override val shapeType: Class<StructureShape> = StructureShape::class.java
@@ -108,19 +106,16 @@ class JavaExceptionGenerator(
         symbolProvider: SymbolProvider
     ) {
         val dtoRecordName = "Data"
-        val jsonProperty = ClassName.get("com.fasterxml.jackson.annotation", "JsonProperty")
 
         val nonMessageMembers = shape.allMembers.values.filter { !it.memberName.equals("message", ignoreCase = true) }
 
         val recordParameters = mutableListOf<ParameterSpec>()
 
         val messageParam = ParameterSpec.builder(String::class.java, "message")
-        if (serializationLibrary == "jackson") {
-            messageParam.addAnnotation(
-                AnnotationSpec.builder(jsonProperty)
-                    .addMember("value", $$"$S", "message")
-                    .build()
-            )
+        codegenContext?.let { ctx ->
+            ctx.integrations.forEach { integration ->
+                integration.onExceptionDtoParameterGenerated(ctx, shape, "message", messageParam)
+            }
         }
         recordParameters.add(messageParam.build())
 
@@ -130,12 +125,10 @@ class JavaExceptionGenerator(
             val typeName = memberSymbol.toTypeName()
 
             val paramBuilder = ParameterSpec.builder(typeName, fieldName)
-            if (serializationLibrary == "jackson") {
-                paramBuilder.addAnnotation(
-                    AnnotationSpec.builder(jsonProperty)
-                        .addMember("value", $$"$S", member.memberName)
-                        .build()
-                )
+            codegenContext?.let { ctx ->
+                ctx.integrations.forEach { integration ->
+                    integration.onExceptionDtoParameterGenerated(ctx, shape, member.memberName, paramBuilder)
+                }
             }
             recordParameters.add(paramBuilder.build())
         }
