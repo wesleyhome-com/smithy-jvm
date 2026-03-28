@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":generator-core"))
+    implementation(project(":generator-java-spi"))
     implementation(project(":generator-java"))
 
     // Core Smithy build and codegen abstractions

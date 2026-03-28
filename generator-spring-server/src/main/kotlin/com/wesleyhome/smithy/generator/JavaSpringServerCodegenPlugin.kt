@@ -30,20 +30,22 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
         val manifest = context.fileManifest
 
         val serializationLibrary = "jackson"
+        val strategies = listOf(
+            JavaStructureGenerator(serializationLibrary),
+            JavaExceptionGenerator(serializationLibrary),
+            JavaEnumGenerator(serializationLibrary),
+            JavaUnionGenerator(serializationLibrary),
+            JavaSpringOperationApiGenerator(),
+            JavaSpringControllerGenerator(),
+            JavaSpringGlobalExceptionHandlerGenerator(),
+            JavaSpringFallbackConfigGenerator()
+        )
 
         // 1. Run the orchestration with all strategies (Models + Spring Server)
         val result = JavaCodegenRunner.run(
             context = context,
-            strategies = listOf(
-                JavaStructureGenerator(serializationLibrary),
-                JavaExceptionGenerator(serializationLibrary),
-                JavaEnumGenerator(serializationLibrary),
-                JavaUnionGenerator(serializationLibrary),
-                JavaSpringOperationApiGenerator(),
-                JavaSpringControllerGenerator(),
-                JavaSpringGlobalExceptionHandlerGenerator(),
-                JavaSpringFallbackConfigGenerator()
-            )
+            target = JavaCodegenTarget.SERVER,
+            integrations = listOf(LegacyStrategyIntegration(strategies, JavaCodegenTarget.SERVER))
         )
 
         // 2. Validation Phase

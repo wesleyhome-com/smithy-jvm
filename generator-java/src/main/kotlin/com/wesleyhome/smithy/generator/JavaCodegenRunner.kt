@@ -10,6 +10,7 @@ import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.ShapeId
 import software.amazon.smithy.model.transform.ModelTransformer
 import software.amazon.smithy.model.validation.ValidationEvent
+import java.util.ServiceLoader
 
 /**
  * Reusable engine for executing Java-based Smithy generation strategies.
@@ -20,45 +21,90 @@ object JavaCodegenRunner {
     /**
      * The result of the Java codegen orchestration.
      */
-    data class Result(val files: List<GeneratedFile>,
-                      val validationEvents: List<ValidationEvent>,
-                      val model: Model,
-                      val serviceShape: ServiceShape,
-                      val symbolProvider: SymbolProvider,
-                      val basePackage: String
+    data class Result(
+        val files: List<GeneratedFile>,
+        val validationEvents: List<ValidationEvent>,
+        val model: Model,
+        val serviceShape: ServiceShape,
+        val symbolProvider: SymbolProvider,
+        val basePackage: String
     )
 
-    fun run(context: PluginContext, strategies: List<ShapeGenerator<out Shape>>
+    fun run(context: PluginContext, strategies: List<ShapeGenerator<out Shape>>): Result {
+        return run(
+            context = context,
+            target = JavaCodegenTarget.MODEL,
+            integrations = listOf(LegacyStrategyIntegration(strategies))
+        )
+    }
+
+    fun run(
+        context: PluginContext,
+        target: JavaCodegenTarget,
+        integrations: List<JavaCodegenIntegration> = emptyList()
     ): Result {
-        var model = context.model
-        val settings = context.settings
+        val settings = JavaSettings.from(context.settings)
 
         // 1. Resolve Target Service
-        val serviceString = settings.getStringMember("service").orElseThrow {
-            IllegalArgumentException("Missing required 'service' configuration in smithy-build.json")
-        }.value
+        val serviceString = settings.requireString("service")
         val serviceId = ShapeId.from(serviceString)
-        var serviceShape = model.expectShape(serviceId, ServiceShape::class.java)
 
         // 2. Transform Model: Ensure dedicated inputs/outputs
         val transformer = ModelTransformer.create()
-        model = transformer.createDedicatedInputAndOutput(model, "Input", "Output")
+        var model = transformer.createDedicatedInputAndOutput(context.model, "Input", "Output")
 
         // Re-resolve the service shape against the newly transformed model
-        serviceShape = model.expectShape(serviceId, ServiceShape::class.java)
+        var serviceShape = model.expectShape(serviceId, ServiceShape::class.java)
 
         // 3. Compute Service Closure
         val walker = Walker(model)
         val shapeClosure = walker.walkShapes(serviceShape)
 
-        val basePackage = settings.getStringMember("package").map { it.value }.orElse("com.wesleyhome.generated")
-        val dtoSuffix = settings.getStringMember("dtoSuffix").map { it.value }.orElse("DTO")
+        val basePackage = settings.getString("package") ?: "com.wesleyhome.generated"
+        val dtoSuffix = settings.getString("dtoSuffix") ?: "DTO"
 
-        // Pass the serviceShape to our SymbolProvider so it handles renames
-        val baseSymbolProvider = JavaSymbolProvider(model, basePackage, dtoSuffix, serviceShape)
-        val symbolProvider =
-            ReservedWordSymbolProvider.builder().symbolProvider(baseSymbolProvider).nameReservedWords(JavaReservedWords)
-                .memberReservedWords(JavaReservedWords).build()
+        var symbolProvider: SymbolProvider = ReservedWordSymbolProvider.builder()
+            .symbolProvider(JavaSymbolProvider(model, basePackage, dtoSuffix, serviceShape))
+            .nameReservedWords(JavaReservedWords)
+            .memberReservedWords(JavaReservedWords)
+            .build()
+
+        val discoveredIntegrations = ServiceLoader.load(
+            JavaCodegenIntegration::class.java,
+            JavaCodegenRunner::class.java.classLoader
+        ).toList()
+        val activeIntegrations = (discoveredIntegrations + integrations)
+            .filter { it.supports(target) }
+            .sortedBy { it.priority() }
+
+        var codegenContext = JavaCodegenContext(
+            model = model,
+            settings = settings,
+            serviceShape = serviceShape,
+            symbolProvider = symbolProvider,
+            integrations = activeIntegrations,
+            target = target
+        )
+
+        for (integration in activeIntegrations) {
+            model = integration.preprocessModel(codegenContext)
+            serviceShape = model.expectShape(serviceId, ServiceShape::class.java)
+            codegenContext = codegenContext.copy(model = model, serviceShape = serviceShape)
+        }
+
+        symbolProvider = ReservedWordSymbolProvider.builder()
+            .symbolProvider(JavaSymbolProvider(model, basePackage, dtoSuffix, serviceShape))
+            .nameReservedWords(JavaReservedWords)
+            .memberReservedWords(JavaReservedWords)
+            .build()
+        codegenContext = codegenContext.copy(symbolProvider = symbolProvider)
+
+        for (integration in activeIntegrations) {
+            symbolProvider = integration.decorateSymbolProvider(codegenContext, symbolProvider)
+            codegenContext = codegenContext.copy(symbolProvider = symbolProvider)
+        }
+
+        val strategies = activeIntegrations.flatMap { it.additionalShapeGenerators(codegenContext) }
 
         // 4. The Engine Pipeline: Iterate over shapes within the service closure
         val (generatedFiles, validationEvents) = shapeClosure

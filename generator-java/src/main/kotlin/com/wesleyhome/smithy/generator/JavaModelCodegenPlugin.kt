@@ -15,15 +15,17 @@ class JavaModelCodegenPlugin : SmithyBuildPlugin {
 
     override fun execute(context: PluginContext) {
         val serializationLibrary = context.settings.getStringMember("serializationLibrary").map { it.value }.orElse("jackson")
-        
+        val strategies = listOf(
+            JavaStructureGenerator(serializationLibrary),
+            JavaExceptionGenerator(),
+            JavaEnumGenerator(serializationLibrary),
+            JavaUnionGenerator(serializationLibrary)
+        )
+
         val result = JavaCodegenRunner.run(
             context = context,
-            strategies = listOf(
-                JavaStructureGenerator(serializationLibrary),
-                JavaExceptionGenerator(),
-                JavaEnumGenerator(serializationLibrary),
-                JavaUnionGenerator(serializationLibrary)
-            )
+            target = JavaCodegenTarget.MODEL,
+            integrations = listOf(LegacyStrategyIntegration(strategies, JavaCodegenTarget.MODEL))
         )
 
         // 1. Validation Phase

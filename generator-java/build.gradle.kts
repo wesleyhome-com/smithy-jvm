@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation(project(":generator-core"))
+    implementation(project(":generator-java-spi"))
 
     // JavaPoet for clean Java code generation
     implementation(libs.javapoet)

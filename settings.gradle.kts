@@ -19,6 +19,14 @@ plugins {
 // Include the `app` and `utils` subprojects in the build.
 // If there are changes in only one of the projects, Gradle will rebuild only the one that has changed.
 // Learn more about structuring projects with Gradle - https://docs.gradle.org/8.7/userguide/multi_project_builds.html
-include(":generator-spring-server", ":generator-core", ":generator-java", ":gradle-plugin", ":maven-plugin", ":test-projects:gradle-project")
+include(
+    ":generator-spring-server",
+    ":generator-core",
+    ":generator-java-spi",
+    ":generator-java",
+    ":gradle-plugin",
+    ":maven-plugin",
+    ":test-projects:gradle-project"
+)
 
 rootProject.name = "smithy-to-spring-boot"
