@@ -1,13 +1,16 @@
 package com.wesleyhome.smithy.generator
 
-import com.palantir.javapoet.*
+import com.palantir.javapoet.AnnotationSpec
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.JavaFile
+import com.palantir.javapoet.MethodSpec
+import com.palantir.javapoet.ParameterizedTypeName
+import com.palantir.javapoet.TypeSpec
 import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.knowledge.TopDownIndex
-import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.model.shapes.StructureShape
-import software.amazon.smithy.model.traits.ErrorTrait
 import software.amazon.smithy.model.traits.HttpErrorTrait
 import javax.lang.model.element.Modifier
 
@@ -23,7 +26,7 @@ class JavaSpringGlobalExceptionHandlerGenerator : ShapeGenerator<ServiceShape> {
         val operations = topDownIndex.getContainedOperations(shape)
         
         val errorShapes = operations.asSequence()
-            .flatMap { it.getErrors() }
+            .flatMap { it.errorsSet }
             .distinct()
             .map { model.expectShape(it, StructureShape::class.java) }
             .toList()
@@ -57,13 +60,13 @@ class JavaSpringGlobalExceptionHandlerGenerator : ShapeGenerator<ServiceShape> {
             val methodBuilder = MethodSpec.methodBuilder(methodName)
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(AnnotationSpec.builder(ClassName.get("org.springframework.web.bind.annotation", "ExceptionHandler"))
-                    .addMember("value", "\$T.class", exceptionClass)
+                    .addMember("value", $$"$T.class", exceptionClass)
                     .build())
                 .returns(ParameterizedTypeName.get(responseEntity, objectClass))
                 .addParameter(exceptionClass, "ex")
                 
             // Build the response entity returning the exception's data DTO
-            methodBuilder.addStatement("return new \$T<>(ex.toDto(), \$T.valueOf(\$L))", responseEntity, httpStatus, errorCode)
+            methodBuilder.addStatement($$"return new $T<>(ex.toDto(), $T.valueOf($L))", responseEntity, httpStatus, errorCode)
             
             typeBuilder.addMethod(methodBuilder.build())
         }
