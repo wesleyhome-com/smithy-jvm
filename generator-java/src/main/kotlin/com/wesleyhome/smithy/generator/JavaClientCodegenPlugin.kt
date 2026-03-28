@@ -15,8 +15,7 @@ class JavaClientCodegenPlugin : SmithyBuildPlugin {
     override fun execute(context: PluginContext) {
         val result = JavaCodegenRunner.run(
             context = context,
-            target = JavaCodegenTarget.CLIENT,
-            integrations = listOf(ClientIntegration())
+	        target = JavaCodegenTarget.CLIENT
         )
 
         if (result.validationEvents.any { it.severity == Severity.ERROR }) {

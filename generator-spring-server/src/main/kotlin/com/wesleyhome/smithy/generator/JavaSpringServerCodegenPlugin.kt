@@ -22,8 +22,7 @@ class JavaSpringServerCodegenPlugin : SmithyBuildPlugin {
         // 1. Run the orchestration with all strategies (Models + Spring Server)
         val result = JavaCodegenRunner.run(
             context = context,
-            target = JavaCodegenTarget.SERVER,
-            integrations = listOf(SpringServerIntegration())
+            target = JavaCodegenTarget.SERVER
         )
 
         // 2. Validation Phase

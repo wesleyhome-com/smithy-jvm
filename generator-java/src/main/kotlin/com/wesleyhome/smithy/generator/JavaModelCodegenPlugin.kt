@@ -16,8 +16,7 @@ class JavaModelCodegenPlugin : SmithyBuildPlugin {
     override fun execute(context: PluginContext) {
         val result = JavaCodegenRunner.run(
             context = context,
-            target = JavaCodegenTarget.MODEL,
-            integrations = listOf(ModelIntegration())
+            target = JavaCodegenTarget.MODEL
         )
 
         // 1. Validation Phase

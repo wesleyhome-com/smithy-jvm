@@ -14,7 +14,7 @@ import java.util.ServiceLoader
 
 /**
  * Reusable engine for executing Java-based Smithy generation strategies.
- * Orchestrates model transformation, service closure computation, and strategy execution.
+ * Orchestrates model transformation, integration lifecycle, and strategy execution.
  */
 object JavaCodegenRunner {
     private data class ContributionCandidate(
@@ -34,14 +34,6 @@ object JavaCodegenRunner {
         val basePackage: String
     )
 
-    fun run(context: PluginContext, strategies: List<ShapeGenerator<out Shape>>): Result {
-        return run(
-            context = context,
-            target = JavaCodegenTarget.MODEL,
-            integrations = listOf(LegacyStrategyIntegration(strategies))
-        )
-    }
-
     fun run(
         context: PluginContext,
         target: JavaCodegenTarget,
@@ -54,24 +46,11 @@ object JavaCodegenRunner {
         val serviceId = ShapeId.from(serviceString)
 
         // 2. Transform Model: Ensure dedicated inputs/outputs
-        val transformer = ModelTransformer.create()
-        var model = transformer.createDedicatedInputAndOutput(context.model, "Input", "Output")
-
-        // Re-resolve the service shape against the newly transformed model
-        var serviceShape = model.expectShape(serviceId, ServiceShape::class.java)
-
-        // 3. Compute Service Closure
-        val walker = Walker(model)
-        val shapeClosure = walker.walkShapes(serviceShape)
+        val transformedModel = ModelTransformer.create().createDedicatedInputAndOutput(context.model, "Input", "Output")
+        val transformedService = transformedModel.expectShape(serviceId, ServiceShape::class.java)
 
         val basePackage = settings.getString("package") ?: "com.wesleyhome.generated"
         val dtoSuffix = settings.getString("dtoSuffix") ?: "DTO"
-
-        var symbolProvider: SymbolProvider = ReservedWordSymbolProvider.builder()
-            .symbolProvider(JavaSymbolProvider(model, basePackage, dtoSuffix, serviceShape))
-            .nameReservedWords(JavaReservedWords)
-            .memberReservedWords(JavaReservedWords)
-            .build()
 
         val discoveredIntegrations = ServiceLoader.load(
             JavaCodegenIntegration::class.java,
@@ -81,34 +60,34 @@ object JavaCodegenRunner {
             .filter { it.supports(target) }
             .sortedBy { it.priority() }
 
-        var codegenContext = JavaCodegenContext(
-            model = model,
+        val initialContext = JavaCodegenContext(
+            model = transformedModel,
             settings = settings,
-            serviceShape = serviceShape,
-            symbolProvider = symbolProvider,
+            serviceShape = transformedService,
+            symbolProvider = buildReservedSymbolProvider(transformedModel, transformedService, basePackage, dtoSuffix),
             integrations = activeIntegrations,
             target = target
         )
 
-        for (integration in activeIntegrations) {
-            model = integration.preprocessModel(codegenContext)
-            serviceShape = model.expectShape(serviceId, ServiceShape::class.java)
-            codegenContext = codegenContext.copy(model = model, serviceShape = serviceShape)
+        val preprocessedContext = activeIntegrations.fold(initialContext) { state, integration ->
+            val nextModel = integration.preprocessModel(state)
+            val nextService = nextModel.expectShape(serviceId, ServiceShape::class.java)
+            state.copy(model = nextModel, serviceShape = nextService)
         }
 
-        symbolProvider = ReservedWordSymbolProvider.builder()
-            .symbolProvider(JavaSymbolProvider(model, basePackage, dtoSuffix, serviceShape))
-            .nameReservedWords(JavaReservedWords)
-            .memberReservedWords(JavaReservedWords)
-            .build()
-        codegenContext = codegenContext.copy(symbolProvider = symbolProvider)
+        val baseSymbolProvider = buildReservedSymbolProvider(
+            preprocessedContext.model,
+            preprocessedContext.serviceShape,
+            basePackage,
+            dtoSuffix
+        )
 
-        for (integration in activeIntegrations) {
-            symbolProvider = integration.decorateSymbolProvider(codegenContext, symbolProvider)
-            codegenContext = codegenContext.copy(symbolProvider = symbolProvider)
+        val decoratedSymbolProvider = activeIntegrations.fold(baseSymbolProvider) { current, integration ->
+            integration.decorateSymbolProvider(preprocessedContext.copy(symbolProvider = current), current)
         }
-
-        val strategies = resolveStrategies(activeIntegrations, codegenContext)
+        val finalContext = preprocessedContext.copy(symbolProvider = decoratedSymbolProvider)
+        val strategies = resolveStrategies(activeIntegrations, finalContext)
+        val shapeClosure = Walker(finalContext.model).walkShapes(finalContext.serviceShape)
 
         // 4. The Engine Pipeline: Iterate over shapes within the service closure
         val (generatedFiles, validationEvents) = shapeClosure
@@ -119,7 +98,7 @@ object JavaCodegenRunner {
                     .map { strategy ->
                         @Suppress("UNCHECKED_CAST")
                         val shapeGenerator = strategy as ShapeGenerator<Shape>
-                        val result = shapeGenerator.generate(shape, model, symbolProvider)
+                        val result = shapeGenerator.generate(shape, finalContext.model, finalContext.symbolProvider)
                         result.files to result.validationEvents
                     }
             }
@@ -131,11 +110,24 @@ object JavaCodegenRunner {
         return Result(
             files = generatedFiles,
             validationEvents = validationEvents,
-            model = model,
-            serviceShape = serviceShape,
-            symbolProvider = symbolProvider,
+            model = finalContext.model,
+            serviceShape = finalContext.serviceShape,
+            symbolProvider = finalContext.symbolProvider,
             basePackage = basePackage
         )
+    }
+
+    private fun buildReservedSymbolProvider(
+        model: Model,
+        serviceShape: ServiceShape,
+        basePackage: String,
+        dtoSuffix: String
+    ): SymbolProvider {
+        return ReservedWordSymbolProvider.builder()
+            .symbolProvider(JavaSymbolProvider(model, basePackage, dtoSuffix, serviceShape))
+            .nameReservedWords(JavaReservedWords)
+            .memberReservedWords(JavaReservedWords)
+            .build()
     }
 
     private fun resolveStrategies(
