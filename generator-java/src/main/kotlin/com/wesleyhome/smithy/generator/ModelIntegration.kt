@@ -10,7 +10,7 @@ class ModelIntegration : JavaCodegenIntegration {
         return listOf(
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_STRUCTURES,
-                generators = listOf(JavaStructureGenerator(serializationLibrary, context))
+                generators = listOf(JavaStructureGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.MODEL_EXCEPTIONS,

@@ -11,7 +11,7 @@ class ClientIntegration : JavaCodegenIntegration {
         return listOf(
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_STRUCTURES,
-                generators = listOf(JavaStructureGenerator(serializationLibrary, context))
+	            generators = listOf(JavaStructureGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_EXCEPTIONS,

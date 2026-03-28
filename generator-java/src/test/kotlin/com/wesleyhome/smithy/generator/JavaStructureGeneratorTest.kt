@@ -71,7 +71,7 @@ class JavaStructureGeneratorTest {
 	}
 
 	@Test
-	fun `generates java record with validation annotations`() {
+	fun `generates java record without framework annotations`() {
 		val model = Model.assembler()
 			.addUnparsedModel(
 				"test.smithy", """
@@ -105,10 +105,11 @@ class JavaStructureGeneratorTest {
 		val code = generatedFiles.files.first().content
 
 		assertThat(code).contains("record ValidatedStructureDTO")
-		assertThat(code).contains("@NotNull @JsonProperty(\"name\") String name")
-		assertThat(code).contains("@Range(min = 10, max = 20) @JsonProperty(\"age\") Integer age")
-		assertThat(code).contains("@Min(5) @JsonProperty(\"count\") Integer count")
 		assertThat(code).contains("NestedStructureDTO nested")
+		assertThat(code.contains("@NotNull")).isFalse()
+		assertThat(code.contains("@Range(")).isFalse()
+		assertThat(code.contains("@Min(")).isFalse()
+		assertThat(code.contains("@JsonProperty")).isFalse()
 	}
 
 	@Test
@@ -177,7 +178,7 @@ class JavaStructureGeneratorTest {
 	}
 
 	@Test
-	fun `respects serializationLibrary setting`() {
+	fun `base structure generator is serialization agnostic`() {
 		val model = Model.assembler()
 			.addUnparsedModel(
 				"test.smithy", """
@@ -194,12 +195,7 @@ class JavaStructureGeneratorTest {
 		val shape = model.expectShape(shapeId, StructureShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
 
-		// Case 1: Jackson (Default)
-		val jacksonCode = JavaStructureGenerator("jackson").generate(shape, model, symbolProvider).files.first().content
-		assertThat(jacksonCode).contains("@JsonProperty(\"foo\")")
-
-		// Case 2: None
-		val noneCode = JavaStructureGenerator("none").generate(shape, model, symbolProvider).files.first().content
-		assertThat(noneCode.contains("@JsonProperty")).isFalse()
+		val code = JavaStructureGenerator().generate(shape, model, symbolProvider).files.first().content
+		assertThat(code.contains("@JsonProperty")).isFalse()
 	}
 }

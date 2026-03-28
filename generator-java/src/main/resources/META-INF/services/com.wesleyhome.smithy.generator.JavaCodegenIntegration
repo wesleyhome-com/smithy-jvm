@@ -1,2 +1,4 @@
 com.wesleyhome.smithy.generator.ModelIntegration
 com.wesleyhome.smithy.generator.ClientIntegration
+com.wesleyhome.smithy.generator.JacksonIntegration
+com.wesleyhome.smithy.generator.ValidationIntegration

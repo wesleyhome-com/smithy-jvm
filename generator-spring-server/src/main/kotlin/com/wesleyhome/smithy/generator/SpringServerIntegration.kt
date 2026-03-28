@@ -10,7 +10,7 @@ class SpringServerIntegration : JavaCodegenIntegration {
         return listOf(
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_STRUCTURES,
-                generators = listOf(JavaStructureGenerator(serializationLibrary, context))
+                generators = listOf(JavaStructureGenerator(context))
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_EXCEPTIONS,
