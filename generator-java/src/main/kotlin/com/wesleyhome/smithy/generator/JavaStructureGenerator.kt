@@ -61,7 +61,7 @@ class JavaStructureGenerator(
             if (serializationLibrary == "jackson") {
                 paramBuilder.addAnnotation(
                     AnnotationSpec.builder(jsonProperty)
-                        .addMember("value", "\$S", member.memberName)
+                        .addMember("value", $$"$S", member.memberName)
                         .build()
                 )
             }
@@ -102,7 +102,7 @@ class JavaStructureGenerator(
                     } else {
                         node.toString()
                     }
-                    compactConstructor.addStatement("if (\$L == null) \$L = \$L", fieldName, fieldName, valueStr)
+                    compactConstructor.addStatement($$"if ($L == null) $L = $L", fieldName, fieldName, valueStr)
                 }
             }
             typeBuilder.addMethod(compactConstructor.build())
@@ -114,13 +114,13 @@ class JavaStructureGenerator(
 
     private fun applyDocumentation(builder: TypeSpec.Builder, shape: software.amazon.smithy.model.shapes.Shape) {
         shape.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
-            builder.addJavadoc("\$L\n", trait.value)
+            builder.addJavadoc($$"$L\n", trait.value)
         }
     }
 
     private fun applyDocumentation(builder: ParameterSpec.Builder, member: MemberShape) {
         member.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
-            builder.addJavadoc("\$L\n", trait.value)
+            builder.addJavadoc($$"$L\n", trait.value)
         }
     }
 
@@ -131,8 +131,8 @@ class JavaStructureGenerator(
 
         member.getTrait(LengthTrait::class.java).ifPresent { trait ->
             val annotation = AnnotationSpec.builder(ClassName.get(constraints, "Size"))
-            trait.min.ifPresent { annotation.addMember("min", "\$L", it) }
-            trait.max.ifPresent { annotation.addMember("max", "\$L", it) }
+            trait.min.ifPresent { annotation.addMember("min", $$"$L", it) }
+            trait.max.ifPresent { annotation.addMember("max", $$"$L", it) }
             fieldBuilder.addAnnotation(annotation.build())
         }
 
@@ -140,20 +140,20 @@ class JavaStructureGenerator(
             if (trait.min.isPresent && trait.max.isPresent) {
                 fieldBuilder.addAnnotation(
                     AnnotationSpec.builder(ClassName.get("org.hibernate.validator.constraints", "Range"))
-                        .addMember("min", "\$L", trait.min.get())
-                        .addMember("max", "\$L", trait.max.get()).build()
+                        .addMember("min", $$"$L", trait.min.get())
+                        .addMember("max", $$"$L", trait.max.get()).build()
                 )
             } else {
                 trait.min.ifPresent {
                     fieldBuilder.addAnnotation(
                         AnnotationSpec.builder(ClassName.get(constraints, "Min"))
-                            .addMember("value", "\$L", it).build()
+                            .addMember("value", $$"$L", it).build()
                     )
                 }
                 trait.max.ifPresent {
                     fieldBuilder.addAnnotation(
                         AnnotationSpec.builder(ClassName.get(constraints, "Max"))
-                            .addMember("value", "\$L", it).build()
+                            .addMember("value", $$"$L", it).build()
                     )
                 }
             }
@@ -162,7 +162,7 @@ class JavaStructureGenerator(
         member.getTrait(PatternTrait::class.java).ifPresent { trait ->
             fieldBuilder.addAnnotation(
                 AnnotationSpec.builder(ClassName.get(constraints, "Pattern"))
-                    .addMember("regexp", "\$S", trait.value).build()
+                    .addMember("regexp", $$"$S", trait.value).build()
             )
         }
 

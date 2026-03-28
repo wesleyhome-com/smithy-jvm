@@ -100,7 +100,7 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
             )
             // Add Constructor Parameter
             constructorBuilder.addParameter(apiInterfaceType, fieldName)
-            constructorBuilder.addStatement("this.\$L = \$L", fieldName, fieldName)
+            constructorBuilder.addStatement($$"this.$L = $L", fieldName, fieldName)
 
             // Add Controller Method
             val operationMethodName = StringUtils.uncapitalize(operation.id.name)
@@ -119,10 +119,10 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                 }
 
                 val httpAnnotation = AnnotationSpec.builder(ClassName.get(springWeb, annotationName))
-                    .addMember("value", "\$S", httpTrait.uri.toString())
+                    .addMember("value", $$"$S", httpTrait.uri.toString())
 
                 if (annotationName == "RequestMapping") {
-                    httpAnnotation.addMember("method", "RequestMethod.\$L", httpTrait.method.uppercase())
+                    httpAnnotation.addMember("method", $$"RequestMethod.$L", httpTrait.method.uppercase())
                 }
 
                 methodBuilder.addAnnotation(httpAnnotation.build())
@@ -155,14 +155,14 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                     if (member.hasTrait(HttpLabelTrait::class.java)) {
                         paramBuilder.addAnnotation(
                             AnnotationSpec.builder(pathVariable)
-                                .addMember("value", "\$S", paramName)
+                                .addMember("value", $$"$S", paramName)
                                 .build()
                         )
                     } else if (member.hasTrait(HttpQueryTrait::class.java)) {
                         val queryTrait = member.expectTrait(HttpQueryTrait::class.java)
                         val annotationBuilder = AnnotationSpec.builder(requestParam)
-                            .addMember("value", "\$S", queryTrait.value)
-                            .addMember("required", "\$L", member.hasTrait(RequiredTrait::class.java))
+                            .addMember("value", $$"$S", queryTrait.value)
+                            .addMember("required", $$"$L", member.hasTrait(RequiredTrait::class.java))
 
                         member.getTrait(DefaultTrait::class.java).ifPresent { defaultTrait ->
                             val node = defaultTrait.toNode()
@@ -171,7 +171,7 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                             } else {
                                 node.toString()
                             }
-                            annotationBuilder.addMember("defaultValue", "\$S", valueStr)
+                            annotationBuilder.addMember("defaultValue", $$"$S", valueStr)
                         }
 
                         paramBuilder.addAnnotation(annotationBuilder.build())
@@ -179,8 +179,8 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                         val headerTrait = member.expectTrait(HttpHeaderTrait::class.java)
                         paramBuilder.addAnnotation(
                             AnnotationSpec.builder(requestHeader)
-                                .addMember("value", "\$S", headerTrait.value)
-                                .addMember("required", "\$L", member.hasTrait(RequiredTrait::class.java))
+                                .addMember("value", $$"$S", headerTrait.value)
+                                .addMember("required", $$"$L", member.hasTrait(RequiredTrait::class.java))
                                 .build()
                         )
                     }
@@ -222,14 +222,14 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
 
                 methodBuilder.returns(ParameterizedTypeName.get(responseEntity, outputTypeName))
                 methodBuilder.addStatement(
-                    "\$T result = \$L.\$L(\$L)",
+                    $$"$T result = $L.$L($L)",
                     outputTypeName,
                     fieldName,
                     operationMethodName,
                     callArgs
                 )
 
-                val builderChain = CodeBlock.builder().add("\$T.ok()", responseEntity)
+                val builderChain = CodeBlock.builder().add($$"$T.ok()", responseEntity)
 
                 val (metadataMembers, _) = outputShape.getMetadataAndPayload()
                 for (member in metadataMembers.filter { it.hasTrait(HttpHeaderTrait::class.java) }) {
@@ -237,7 +237,7 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                     val getterName = symbolProvider.toMemberName(member)
                     // DTO is a record, so we use getterName()
                     builderChain.add(
-                        "\n.header(\$S, \$T.valueOf(result.\$L()))",
+                        $$"\n.header($S, $T.valueOf(result.$L()))",
                         headerName,
                         String::class.java,
                         getterName
@@ -245,12 +245,12 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
                 }
 
                 builderChain.add("\n.body(result)")
-                methodBuilder.addStatement("return \$L", builderChain.build())
+                methodBuilder.addStatement($$"return $L", builderChain.build())
 
             } else {
                 methodBuilder.returns(ParameterizedTypeName.get(responseEntity, ClassName.get("java.lang", "Void")))
-                methodBuilder.addStatement("\$L.\$L(\$L)", fieldName, operationMethodName, callArgs)
-                methodBuilder.addStatement("return \$T.ok().build()", responseEntity)
+                methodBuilder.addStatement($$"$L.$L($L)", fieldName, operationMethodName, callArgs)
+                methodBuilder.addStatement($$"return $T.ok().build()", responseEntity)
             }
 
             typeBuilder.addMethod(methodBuilder.build())

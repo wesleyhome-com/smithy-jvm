@@ -68,7 +68,7 @@ class JavaClientCoreAbstractionsGenerator(
                 MethodSpec.constructorBuilder()
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Creates a default JdkHttpTransport.\n")
-                    .addStatement("this(\$T.identity())", unaryOperator)
+                    .addStatement($$"this($T.identity())", unaryOperator)
                     .build()
             )
 
@@ -77,7 +77,7 @@ class JavaClientCoreAbstractionsGenerator(
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Creates a JdkHttpTransport with a custom configured HttpClient.Builder.\n")
                     .addParameter(ParameterizedTypeName.get(unaryOperator, httpClientBuilder), "configurer")
-                    .addStatement("\$T builder = configurer.apply(\$T.newBuilder())", httpClientBuilder, httpClient)
+                    .addStatement($$"$T builder = configurer.apply($T.newBuilder())", httpClientBuilder, httpClient)
                     .addStatement("this.client = builder.build()")
                     .build()
             )
@@ -90,13 +90,13 @@ class JavaClientCoreAbstractionsGenerator(
                     .returns(ClassName.get(packageName, "HttpResponse"))
                     .addException(ClassName.get("java.io", "IOException"))
                     .addStatement(
-                        "\$T.Builder builder = \$T.newBuilder().uri(\$T.create(request.uri()))",
+                        $$"$T.Builder builder = $T.newBuilder().uri($T.create(request.uri()))",
                         httpRequest,
                         httpRequest,
                         uri
                     )
                     .addStatement(
-                        "builder.method(request.method(), \$T.BodyPublishers.ofByteArray(request.body()))",
+                        $$"builder.method(request.method(), $T.BodyPublishers.ofByteArray(request.body()))",
                         httpRequest
                     )
                     .addCode("\n")
@@ -106,14 +106,14 @@ class JavaClientCoreAbstractionsGenerator(
                     .addCode("\n")
                     .beginControlFlow("try")
                     .addStatement(
-                        "\$T<byte[]> response = client.send(builder.build(), \$T.ofByteArray())",
+                        $$"$T<byte[]> response = client.send(builder.build(), $T.ofByteArray())",
                         httpResponse,
                         bodyHandlers
                     )
                     .addStatement("return new HttpResponse(response.statusCode(), response.headers().map(), response.body())")
-                    .nextControlFlow("catch (\$T e)", InterruptedException::class.java)
-                    .addStatement("\$T.currentThread().interrupt()", Thread::class.java)
-                    .addStatement("throw new \$T(\"Request interrupted\", e)", ClassName.get("java.io", "IOException"))
+                    .nextControlFlow($$"catch ($T e)", InterruptedException::class.java)
+                    .addStatement($$"$T.currentThread().interrupt()", Thread::class.java)
+                    .addStatement($$"throw new $T(\"Request interrupted\", e)", ClassName.get("java.io", "IOException"))
                     .endControlFlow()
                     .build()
             )
@@ -140,7 +140,7 @@ class JavaClientCoreAbstractionsGenerator(
                 MethodSpec.constructorBuilder()
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Creates a default OkHttpTransport.\n")
-                    .addStatement("this(\$T.identity())", unaryOperator)
+                    .addStatement($$"this($T.identity())", unaryOperator)
                     .build()
             )
 
@@ -149,7 +149,7 @@ class JavaClientCoreAbstractionsGenerator(
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Creates an OkHttpTransport with a custom configured OkHttpClient.Builder.\n")
                     .addParameter(ParameterizedTypeName.get(unaryOperator, okHttpBuilder), "configurer")
-                    .addStatement("this.client = configurer.apply(new \$T.Builder()).build()", okHttpClient)
+                    .addStatement($$"this.client = configurer.apply(new $T.Builder()).build()", okHttpClient)
                     .build()
             )
 
@@ -161,13 +161,13 @@ class JavaClientCoreAbstractionsGenerator(
                     .returns(ClassName.get(packageName, "HttpResponse"))
                     .addException(ClassName.get("java.io", "IOException"))
                     .addStatement(
-                        "\$T.Builder builder = new \$T.Builder().url(request.uri())",
+                        $$"$T.Builder builder = new $T.Builder().url(request.uri())",
                         okHttpRequest,
                         okHttpRequest
                     )
                     .addCode("\n")
                     .addStatement(
-                        "\$T body = (request.body() == null || request.body().length == 0) ? null : \$T.create(request.body(), \$T.parse(\"application/json\"))",
+                        $$"$T body = (request.body() == null || request.body().length == 0) ? null : $T.create(request.body(), $T.parse(\"application/json\"))",
                         okHttpRequestBody, okHttpRequestBody, mediaType
                     )
                     .addStatement("builder.method(request.method(), body)")
@@ -176,7 +176,7 @@ class JavaClientCoreAbstractionsGenerator(
                     .addStatement("values.forEach(value -> builder.addHeader(name, value))")
                     .endControlFlow(")")
                     .addCode("\n")
-                    .beginControlFlow("try (\$T response = client.newCall(builder.build()).execute())", okHttpResponse)
+                    .beginControlFlow($$"try ($T response = client.newCall(builder.build()).execute())", okHttpResponse)
                     .addStatement("byte[] responseBody = response.body() != null ? response.body().bytes() : new byte[0]")
                     .addStatement("return new HttpResponse(response.code(), response.headers().toMultimap(), responseBody)")
                     .endControlFlow()
@@ -199,7 +199,7 @@ class JavaClientCoreAbstractionsGenerator(
                 MethodSpec.constructorBuilder()
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Creates a default JacksonCodec.\n")
-                    .addStatement("this(\$T.identity())", unaryOperator)
+                    .addStatement($$"this($T.identity())", unaryOperator)
                     .build()
             )
 
@@ -208,7 +208,7 @@ class JavaClientCoreAbstractionsGenerator(
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Creates a JacksonCodec with a custom configured ObjectMapper.\n")
                     .addParameter(ParameterizedTypeName.get(unaryOperator, objectMapper), "configurer")
-                    .addStatement("this.mapper = configurer.apply(new \$T())", objectMapper)
+                    .addStatement($$"this.mapper = configurer.apply(new $T())", objectMapper)
                     .build()
             )
 
@@ -257,7 +257,7 @@ class JavaClientCoreAbstractionsGenerator(
                 MethodSpec.constructorBuilder()
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Creates a default GsonCodec.\n")
-                    .addStatement("this(\$T.identity())", unaryOperator)
+                    .addStatement($$"this($T.identity())", unaryOperator)
                     .build()
             )
 
@@ -266,7 +266,7 @@ class JavaClientCoreAbstractionsGenerator(
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Creates a GsonCodec with a custom configured GsonBuilder.\n")
                     .addParameter(ParameterizedTypeName.get(unaryOperator, gsonBuilder), "configurer")
-                    .addStatement("this.gson = configurer.apply(new \$T()).create()", gsonBuilder)
+                    .addStatement($$"this.gson = configurer.apply(new $T()).create()", gsonBuilder)
                     .build()
             )
 

@@ -56,7 +56,7 @@ class JavaSpringOperationApiGenerator : ShapeGenerator<ServiceShape> {
             .addModifiers(Modifier.PUBLIC)
 
         operation.getTrait(software.amazon.smithy.model.traits.DocumentationTrait::class.java).ifPresent { trait ->
-            typeBuilder.addJavadoc("\$L\n", trait.value)
+            typeBuilder.addJavadoc($$"$L\n", trait.value)
         }
 
         val methodBuilder = buildMethodSignature(operation, model, symbolProvider)
@@ -84,16 +84,16 @@ class JavaSpringOperationApiGenerator : ShapeGenerator<ServiceShape> {
                         "ConditionalOnMissingBean"
                     )
                 )
-                    .addMember("value", "\$T.class", ClassName.get(apiPackageName, interfaceName))
+                    .addMember("value", $$"$T.class", ClassName.get(apiPackageName, interfaceName))
                     .build()
             )
-            .addJavadoc("Default implementation of {@link \$L} that returns 501 Not Implemented.\n", interfaceName)
+            .addJavadoc($$"Default implementation of {@link $L} that returns 501 Not Implemented.\n", interfaceName)
 
         val methodBuilder = buildMethodSignature(operation, model, symbolProvider)
             .addAnnotation(Override::class.java)
             .addModifiers(Modifier.PUBLIC)
             .addStatement(
-                "throw new \$T(\$T.NOT_IMPLEMENTED, \"Operation \$L not implemented\")",
+                $$"throw new $T($T.NOT_IMPLEMENTED, \"Operation $L not implemented\")",
                 responseStatusException, httpStatus, operation.id.name
             )
 
@@ -111,7 +111,7 @@ class JavaSpringOperationApiGenerator : ShapeGenerator<ServiceShape> {
         val methodBuilder = MethodSpec.methodBuilder(methodName)
 
         operation.getTrait(software.amazon.smithy.model.traits.DocumentationTrait::class.java).ifPresent { trait ->
-            methodBuilder.addJavadoc("\$L\n\n", trait.value)
+            methodBuilder.addJavadoc($$"$L\n\n", trait.value)
         }
 
         // Map Input (Parameters)
@@ -129,7 +129,7 @@ class JavaSpringOperationApiGenerator : ShapeGenerator<ServiceShape> {
                 )
 
                 member.getTrait(software.amazon.smithy.model.traits.DocumentationTrait::class.java).ifPresent { trait ->
-                    methodBuilder.addJavadoc("@param \$L \$L\n", paramName, trait.value)
+                    methodBuilder.addJavadoc($$"@param $L $L\n", paramName, trait.value)
                 }
             }
 
@@ -144,7 +144,7 @@ class JavaSpringOperationApiGenerator : ShapeGenerator<ServiceShape> {
                 )
 
                 member.getTrait(software.amazon.smithy.model.traits.DocumentationTrait::class.java).ifPresent { trait ->
-                    methodBuilder.addJavadoc("@param \$L \$L\n", paramName, trait.value)
+                    methodBuilder.addJavadoc($$"@param $L $L\n", paramName, trait.value)
                 }
             }
         }
@@ -153,7 +153,7 @@ class JavaSpringOperationApiGenerator : ShapeGenerator<ServiceShape> {
         if (operation.output.isPresent) {
             val outputSymbol = symbolProvider.toSymbol(model.expectShape(operation.output.get()))
             methodBuilder.returns(outputSymbol.toTypeName())
-            methodBuilder.addJavadoc("@return \$T\n", outputSymbol.toTypeName())
+            methodBuilder.addJavadoc($$"@return $T\n", outputSymbol.toTypeName())
         } else {
             methodBuilder.returns(TypeName.VOID)
         }

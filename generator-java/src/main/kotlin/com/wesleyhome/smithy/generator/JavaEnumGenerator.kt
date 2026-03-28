@@ -40,7 +40,7 @@ class JavaEnumGenerator(
         }
 
         shape.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
-            typeBuilder.addJavadoc("\$L\n", trait.value)
+            typeBuilder.addJavadoc($$"$L\n", trait.value)
         }
 
         if (shape is EnumShape) {
@@ -53,7 +53,7 @@ class JavaEnumGenerator(
                     enumConstantBuilder.addAnnotation(Deprecated::class.java)
                 }
                 member.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
-                    enumConstantBuilder.addJavadoc("\$L\n", trait.value)
+                    enumConstantBuilder.addJavadoc($$"$L\n", trait.value)
                 }
                 typeBuilder.addEnumConstant(name, enumConstantBuilder.build())
             }
@@ -67,7 +67,7 @@ class JavaEnumGenerator(
                     enumConstantBuilder.addAnnotation(Deprecated::class.java)
                 }
                 member.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
-                    enumConstantBuilder.addJavadoc("\$L\n", trait.value)
+                    enumConstantBuilder.addJavadoc($$"$L\n", trait.value)
                 }
                 typeBuilder.addEnumConstant(name, enumConstantBuilder.build())
             }
@@ -125,7 +125,7 @@ class JavaEnumGenerator(
             .beginControlFlow("if (value == null)")
             .addStatement("return UNKNOWN_TO_SDK_VERSION")
             .endControlFlow()
-            .beginControlFlow("for (\$T b : \$T.values())", className, className)
+            .beginControlFlow($$"for ($T b : $T.values())", className, className)
             .beginControlFlow("if (value.equals(b.value))")
             .addStatement("return b")
             .endControlFlow()

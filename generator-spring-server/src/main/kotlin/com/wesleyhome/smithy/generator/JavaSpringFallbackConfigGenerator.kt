@@ -53,10 +53,10 @@ class JavaSpringFallbackConfigGenerator : ShapeGenerator<ServiceShape> {
                 .addAnnotation(
                     AnnotationSpec.builder(
                         ClassName.get("org.springframework.boot.autoconfigure.condition", "ConditionalOnMissingBean")
-                    ).addMember("value", "\$T.class", interfaceType).build()
+                    ).addMember("value", $$"$T.class", interfaceType).build()
                 )
                 .returns(interfaceType)
-                .addStatement("return new \$T()", stubType)
+                .addStatement($$"return new $T()", stubType)
                 .build()
 
             typeBuilder.addMethod(beanMethod)

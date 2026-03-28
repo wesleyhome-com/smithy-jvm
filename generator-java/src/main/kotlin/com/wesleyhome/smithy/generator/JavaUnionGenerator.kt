@@ -32,13 +32,13 @@ class JavaUnionGenerator(
         if (serializationLibrary == "jackson") {
             typeBuilder.addAnnotation(
                 AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
-                    .addMember("use", "\$T.Id.NAME", ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
+                    .addMember("use", $$"$T.Id.NAME", ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
                     .addMember(
                         "include",
-                        "\$T.As.WRAPPER_OBJECT",
+                        $$"$T.As.WRAPPER_OBJECT",
                         ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo")
                     )
-                    .addMember("defaultImpl", "\$T.class", unknownClassName)
+                    .addMember("defaultImpl", $$"$T.class", unknownClassName)
                     .build()
             )
         }
@@ -57,10 +57,10 @@ class JavaUnionGenerator(
 
             if (serializationLibrary == "jackson") {
                 subTypesBuilder.addMember(
-                    "value", "\$L",
+                    "value", $$"$L",
                     AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonSubTypes", "Type"))
-                        .addMember("value", "\$T.class", variantClassName)
-                        .addMember("name", "\$S", member.memberName)
+                        .addMember("value", $$"$T.class", variantClassName)
+                        .addMember("name", $$"$S", member.memberName)
                         .build()
                 )
             }

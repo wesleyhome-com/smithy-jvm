@@ -44,7 +44,7 @@ class JavaClientGenerator(
         val implementationBuilder = TypeSpec.classBuilder(implementationName)
             .addModifiers(Modifier.FINAL) // package-private
             .addSuperinterface(ClassName.get(packageName, interfaceName))
-            .addJavadoc("Internal implementation of {@link \$L}.\n", interfaceName)
+            .addJavadoc($$"Internal implementation of {@link $L}.\n", interfaceName)
 
         // 1. Implementation Fields & Constructor
         implementationBuilder.addField(
@@ -97,7 +97,7 @@ class JavaClientGenerator(
                 .addJavadoc("Creates a new builder for configuring the client.\n\n")
                 .addJavadoc("@return A new builder instance.\n")
                 .returns(ClassName.get(packageName, interfaceName, "Builder"))
-                .addStatement("return new \$T()", ClassName.get(packageName, "Default${interfaceName}Builder"))
+                .addStatement($$"return new $T()", ClassName.get(packageName, "Default${interfaceName}Builder"))
                 .build()
         )
 
@@ -131,7 +131,7 @@ class JavaClientGenerator(
 
         val builder = TypeSpec.interfaceBuilder("Builder")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .addJavadoc("Builder for configuring and creating a {@link \$L}.\n", interfaceName)
+            .addJavadoc($$"Builder for configuring and creating a {@link $L}.\n", interfaceName)
             .addMethod(
                 MethodSpec.methodBuilder("baseUrl")
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
@@ -308,7 +308,7 @@ class JavaClientGenerator(
                     )
                     .returns(builderInterfaceType)
                     .addStatement(
-                        "this.transport = new \$T(configurer)",
+                        $$"this.transport = new $T(configurer)",
                         ClassName.get(packageName, "JdkHttpTransport")
                     )
                     .addStatement("return this")
@@ -326,7 +326,10 @@ class JavaClientGenerator(
                         ), "configurer"
                     )
                     .returns(builderInterfaceType)
-                    .addStatement("this.transport = new \$T(configurer)", ClassName.get(packageName, "OkHttpTransport"))
+                    .addStatement(
+                        $$"this.transport = new $T(configurer)",
+                        ClassName.get(packageName, "OkHttpTransport")
+                    )
                     .addStatement("return this")
                     .build()
             )
@@ -344,7 +347,7 @@ class JavaClientGenerator(
                         ), "configurer"
                     )
                     .returns(builderInterfaceType)
-                    .addStatement("this.codec = new \$T(configurer)", ClassName.get(packageName, "JacksonCodec"))
+                    .addStatement($$"this.codec = new $T(configurer)", ClassName.get(packageName, "JacksonCodec"))
                     .addStatement("return this")
                     .build()
             )
@@ -360,7 +363,7 @@ class JavaClientGenerator(
                         ), "configurer"
                     )
                     .returns(builderInterfaceType)
-                    .addStatement("this.codec = new \$T(configurer)", ClassName.get(packageName, "GsonCodec"))
+                    .addStatement($$"this.codec = new $T(configurer)", ClassName.get(packageName, "GsonCodec"))
                     .addStatement("return this")
                     .build()
             )
@@ -371,37 +374,49 @@ class JavaClientGenerator(
             .addModifiers(Modifier.PUBLIC)
             .returns(ClassName.get(packageName, interfaceName))
             .beginControlFlow("if (this.baseUrl == null)")
-            .addStatement("throw new \$T(\"Base URL must be configured\")", IllegalStateException::class.java)
+            .addStatement($$"throw new $T(\"Base URL must be configured\")", IllegalStateException::class.java)
             .endControlFlow()
 
         buildMethod.beginControlFlow("if (this.transport == null)")
-        if (httpClientLibrary == "jdk") {
-            buildMethod.addStatement("this.transport = new \$T()", ClassName.get(packageName, "JdkHttpTransport"))
-        } else if (httpClientLibrary == "okhttp") {
-            buildMethod.addStatement("this.transport = new \$T()", ClassName.get(packageName, "OkHttpTransport"))
-        } else {
-            buildMethod.addStatement(
-                "throw new \$T(\"No HttpTransport configured and no default library specified.\")",
-                IllegalStateException::class.java
-            )
+        when (httpClientLibrary) {
+            "jdk" -> {
+                buildMethod.addStatement($$"this.transport = new $T()", ClassName.get(packageName, "JdkHttpTransport"))
+            }
+
+            "okhttp" -> {
+                buildMethod.addStatement($$"this.transport = new $T()", ClassName.get(packageName, "OkHttpTransport"))
+            }
+
+            else -> {
+                buildMethod.addStatement(
+                    $$"throw new $T(\"No HttpTransport configured and no default library specified.\")",
+                    IllegalStateException::class.java
+                )
+            }
         }
         buildMethod.endControlFlow()
 
         buildMethod.beginControlFlow("if (this.codec == null)")
-        if (serializationLibrary == "jackson") {
-            buildMethod.addStatement("this.codec = new \$T()", ClassName.get(packageName, "JacksonCodec"))
-        } else if (serializationLibrary == "gson") {
-            buildMethod.addStatement("this.codec = new \$T()", ClassName.get(packageName, "GsonCodec"))
-        } else {
-            buildMethod.addStatement(
-                "throw new \$T(\"No ProtocolCodec configured and no default library specified.\")",
-                IllegalStateException::class.java
-            )
+        when (serializationLibrary) {
+            "jackson" -> {
+                buildMethod.addStatement($$"this.codec = new $T()", ClassName.get(packageName, "JacksonCodec"))
+            }
+
+            "gson" -> {
+                buildMethod.addStatement($$"this.codec = new $T()", ClassName.get(packageName, "GsonCodec"))
+            }
+
+            else -> {
+                buildMethod.addStatement(
+                    $$"throw new $T(\"No ProtocolCodec configured and no default library specified.\")",
+                    IllegalStateException::class.java
+                )
+            }
         }
         buildMethod.endControlFlow()
 
         buildMethod.addStatement(
-            "return new \$T(this.transport, this.codec, this.baseUrl)",
+            $$"return new $T(this.transport, this.codec, this.baseUrl)",
             ClassName.get(packageName, implementationName)
         )
 
@@ -426,7 +441,7 @@ class JavaClientGenerator(
         // 1. Interface Method
         val interfaceMethod = MethodSpec.methodBuilder(operationName)
             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-            .addJavadoc("\$L", javadocString)
+            .addJavadoc($$"$L", javadocString)
             .addException(ClassName.get("java.io", "IOException"))
             .returns(outputType)
 
@@ -452,7 +467,7 @@ class JavaClientGenerator(
             IllegalArgumentException("Operation ${operation.id} must have an @http trait for client generation")
         }
 
-        implMethod.addStatement("\$T uri = this.baseUrl + \$S", String::class.java, httpTrait.uri.toString())
+        implMethod.addStatement($$"$T uri = this.baseUrl + $S", String::class.java, httpTrait.uri.toString())
 
         operation.input.ifPresent { inputId ->
             val inputShape = model.expectShape(inputId, StructureShape::class.java)
@@ -464,21 +479,21 @@ class JavaClientGenerator(
             for (member in metadataMembers.filter { it.hasTrait(HttpLabelTrait::class.java) }) {
                 val memberName = symbolProvider.toMemberName(member)
                 implMethod.addStatement(
-                    "uri = uri.replace(\$S, String.valueOf(input.\$L()))",
+                    $$"uri = uri.replace($S, String.valueOf(input.$L()))",
                     "{${member.memberName}}", memberName
                 )
             }
 
             val queryMembers = metadataMembers.filter { it.hasTrait(HttpQueryTrait::class.java) }
             if (queryMembers.isNotEmpty()) {
-                val streamArgs = queryMembers.map { member ->
+                val streamArgs = queryMembers.joinToString(",\n") { member ->
                     val queryTrait = member.expectTrait(HttpQueryTrait::class.java)
                     val memberName = symbolProvider.toMemberName(member)
                     "input.$memberName() != null ? \"${queryTrait.value}=\" + input.$memberName() : null"
-                }.joinToString(",\n")
+                }
 
                 implMethod.addStatement(
-                    "String queryParams = \$T.of(\n\$L\n)\n.filter(\$T::nonNull)\n.collect(\$T.joining(\"&\"))",
+                    $$"String queryParams = $T.of(\n$L\n)\n.filter($T::nonNull)\n.collect($T.joining(\"&\"))",
                     java.util.stream.Stream::class.java,
                     streamArgs,
                     java.util.Objects::class.java,
@@ -493,7 +508,7 @@ class JavaClientGenerator(
             if (payloadMembers.size == 1) {
                 val payloadMember = payloadMembers[0]
                 implMethod.addStatement(
-                    "byte[] body = codec.serialize(input.\$L())",
+                    $$"byte[] body = codec.serialize(input.$L())",
                     symbolProvider.toMemberName(payloadMember)
                 )
             } else if (payloadMembers.isNotEmpty()) {
@@ -501,13 +516,11 @@ class JavaClientGenerator(
             } else {
                 implMethod.addStatement("byte[] body = new byte[0]")
             }
-        } ?: run {
-            implMethod.addStatement("byte[] body = new byte[0]")
         }
 
         // Headers
         implMethod.addStatement(
-            "\$T<\$T, \$T<\$T>> headers = new \$T<>()",
+            $$"$T<$T, $T<$T>> headers = new $T<>()",
             java.util.Map::class.java,
             String::class.java,
             java.util.List::class.java,
@@ -515,7 +528,7 @@ class JavaClientGenerator(
             java.util.HashMap::class.java
         )
         implMethod.addStatement(
-            "headers.put(\$S, \$T.of(\$S))",
+            $$"headers.put($S, $T.of($S))",
             "Content-Type",
             java.util.List::class.java,
             "application/json"
@@ -528,9 +541,9 @@ class JavaClientGenerator(
             for (member in metadataMembers.filter { it.hasTrait(HttpHeaderTrait::class.java) }) {
                 val headerTrait = member.expectTrait(HttpHeaderTrait::class.java)
                 val memberName = symbolProvider.toMemberName(member)
-                implMethod.beginControlFlow("if (input.\$L() != null)", memberName)
+                implMethod.beginControlFlow($$"if (input.$L() != null)", memberName)
                 implMethod.addStatement(
-                    "headers.put(\$S, \$T.of(String.valueOf(input.\$L())))",
+                    $$"headers.put($S, $T.of(String.valueOf(input.$L())))",
                     headerTrait.value, java.util.List::class.java, memberName
                 )
                 implMethod.endControlFlow()
@@ -538,7 +551,7 @@ class JavaClientGenerator(
         }
 
         implMethod.addStatement(
-            "HttpRequest request = new HttpRequest(\$S, uri, headers, body)",
+            $$"HttpRequest request = new HttpRequest($S, uri, headers, body)",
             httpTrait.method.uppercase()
         )
         implMethod.addStatement("HttpResponse response = transport.execute(request)")
@@ -546,11 +559,11 @@ class JavaClientGenerator(
         implMethod.beginControlFlow("if (response.statusCode() >= 200 && response.statusCode() < 300)")
         if (outputSymbol != null) {
             val outputShape = model.expectShape(operation.output.get(), StructureShape::class.java)
-            val (metadataMembers, payloadMembers) = outputShape.getMetadataAndPayload()
+            val (metadataMembers, _) = outputShape.getMetadataAndPayload()
 
             if (metadataMembers.any { it.hasTrait(HttpHeaderTrait::class.java) }) {
                 implMethod.addStatement(
-                    "\$T baseOutput = codec.deserialize(response.body(), \$T.class)",
+                    $$"$T baseOutput = codec.deserialize(response.body(), $T.class)",
                     outputType,
                     outputType
                 )
@@ -565,28 +578,34 @@ class JavaClientGenerator(
                         val typeName = memberSymbol.toTypeName()
 
                         // We define a local variable for the header
-                        implMethod.addStatement("\$T \$L = null", typeName, memberName)
-                        implMethod.beginControlFlow("if (response.headers().containsKey(\$S))", headerTrait.value)
+                        implMethod.addStatement($$"$T $L = null", typeName, memberName)
+                        implMethod.beginControlFlow($$"if (response.headers().containsKey($S))", headerTrait.value)
                         implMethod.addStatement(
-                            "String headerValue = response.headers().get(\$S).get(0)",
+                            $$"String headerValue = response.headers().get($S).get(0)",
                             headerTrait.value
                         )
 
                         // Handle simple type conversion
-                        if (typeName == TypeName.LONG || typeName == ClassName.get("java.lang", "Long")) {
-                            implMethod.addStatement(
-                                "\$L = \$T.parseLong(headerValue)",
-                                memberName,
-                                Long::class.javaObjectType
-                            )
-                        } else if (typeName == TypeName.INT || typeName == ClassName.get("java.lang", "Integer")) {
-                            implMethod.addStatement(
-                                "\$L = \$T.parseInt(headerValue)",
-                                memberName,
-                                Integer::class.javaObjectType
-                            )
-                        } else {
-                            implMethod.addStatement("\$L = headerValue", memberName)
+                        when (typeName) {
+                            TypeName.LONG, ClassName.get("java.lang", "Long") -> {
+                                implMethod.addStatement(
+                                    $$"$L = $T.parseLong(headerValue)",
+                                    memberName,
+                                    Long::class.javaObjectType
+                                )
+                            }
+
+                            TypeName.INT, ClassName.get("java.lang", "Integer") -> {
+                                implMethod.addStatement(
+                                    $$"$L = $T.parseInt(headerValue)",
+                                    memberName,
+                                    Integer::class.javaObjectType
+                                )
+                            }
+
+                            else -> {
+                                implMethod.addStatement($$"$L = headerValue", memberName)
+                            }
                         }
                         implMethod.endControlFlow()
                         constructorArgs.add(memberName)
@@ -594,16 +613,16 @@ class JavaClientGenerator(
                         constructorArgs.add("baseOutput.$memberName()")
                     }
                 }
-                implMethod.addStatement("return new \$T(\$L)", outputType, constructorArgs.joinToString(", "))
+                implMethod.addStatement($$"return new $T($L)", outputType, constructorArgs.joinToString(", "))
             } else {
-                implMethod.addStatement("return codec.deserialize(response.body(), \$T.class)", outputType)
+                implMethod.addStatement($$"return codec.deserialize(response.body(), $T.class)", outputType)
             }
         } else {
             implMethod.addStatement("return")
         }
         implMethod.nextControlFlow("else")
         implMethod.addStatement(
-            "throw new RuntimeException(\$S + response.statusCode())",
+            $$"throw new RuntimeException($S + response.statusCode())",
             "Service returned error code: "
         )
         implMethod.endControlFlow()

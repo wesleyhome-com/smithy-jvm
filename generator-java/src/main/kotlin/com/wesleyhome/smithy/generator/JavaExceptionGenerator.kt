@@ -48,7 +48,7 @@ class JavaExceptionGenerator(
                 MethodSpec.methodBuilder("get${fieldName.replaceFirstChar { it.uppercase() }}")
                     .addModifiers(Modifier.PUBLIC)
                     .returns(typeName)
-                    .addStatement("return this.\$L", fieldName)
+                    .addStatement($$"return this.$L", fieldName)
                     .build()
             )
         }
@@ -72,7 +72,7 @@ class JavaExceptionGenerator(
             if (member.memberName.equals("message", ignoreCase = true)) continue
 
             val fieldName = symbolProvider.toMemberName(member)
-            standardConstructor.addStatement("this.\$L = \$L", fieldName, fieldName)
+            standardConstructor.addStatement($$"this.$L = $L", fieldName, fieldName)
         }
 
         typeBuilder.addMethod(standardConstructor.build())
@@ -85,7 +85,7 @@ class JavaExceptionGenerator(
             .addModifiers(Modifier.PUBLIC)
             .addParameter(className.nestedClass("Data"), "data")
             .addStatement(
-                "this(data.message()\$L)", shape.allMembers.values
+                $$"this(data.message()$L)", shape.allMembers.values
                     .filter { !it.memberName.equals("message", ignoreCase = true) }
                     .joinToString("") { ", data.${symbolProvider.toMemberName(it)}()" })
 
@@ -112,7 +112,7 @@ class JavaExceptionGenerator(
         if (serializationLibrary == "jackson") {
             messageParam.addAnnotation(
                 AnnotationSpec.builder(jsonProperty)
-                    .addMember("value", "\$S", "message")
+                    .addMember("value", $$"$S", "message")
                     .build()
             )
         }
@@ -127,7 +127,7 @@ class JavaExceptionGenerator(
             if (serializationLibrary == "jackson") {
                 paramBuilder.addAnnotation(
                     AnnotationSpec.builder(jsonProperty)
-                        .addMember("value", "\$S", member.memberName)
+                        .addMember("value", $$"$S", member.memberName)
                         .build()
                 )
             }
@@ -150,7 +150,7 @@ class JavaExceptionGenerator(
         val toDtoMethod = MethodSpec.methodBuilder("toDto")
             .addModifiers(Modifier.PUBLIC)
             .returns(className.nestedClass(dtoRecordName))
-            .addStatement("return new \$L(\$L)", dtoRecordName, toDtoArgs.joinToString(", "))
+            .addStatement($$"return new $L($L)", dtoRecordName, toDtoArgs.joinToString(", "))
             .build()
 
         typeBuilder.addType(dtoRecord)
