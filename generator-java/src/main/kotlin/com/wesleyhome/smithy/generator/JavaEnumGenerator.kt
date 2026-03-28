@@ -9,13 +9,12 @@ import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.EnumShape
 import software.amazon.smithy.model.shapes.IntEnumShape
 import software.amazon.smithy.model.shapes.Shape
-import software.amazon.smithy.model.shapes.StringShape
+import software.amazon.smithy.model.traits.DeprecatedTrait
 import software.amazon.smithy.model.traits.DocumentationTrait
-import software.amazon.smithy.model.traits.EnumTrait
 import javax.lang.model.element.Modifier
 
 /**
- * Generates a Java enum for a Smithy EnumShape, IntEnumShape, or a StringShape with the @enum trait.
+ * Generates a Java enum for Smithy 2 `enum` and `intEnum` shapes.
  */
 class JavaEnumGenerator(
     private val serializationLibrary: String = "jackson"
@@ -23,7 +22,7 @@ class JavaEnumGenerator(
     override val shapeType: Class<Shape> = Shape::class.java
 
     override fun generate(shape: Shape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
-        if (shape !is EnumShape && shape !is IntEnumShape && !(shape is StringShape && shape.hasTrait(EnumTrait::class.java))) {
+        if (shape !is EnumShape && shape !is IntEnumShape) {
             return ShapeGenerator.Result()
         }
 
@@ -36,7 +35,7 @@ class JavaEnumGenerator(
         val typeBuilder = TypeSpec.enumBuilder(className)
             .addModifiers(Modifier.PUBLIC)
 
-        if (shape.hasTrait(software.amazon.smithy.model.traits.DeprecatedTrait::class.java)) {
+        if (shape.hasTrait(DeprecatedTrait::class.java)) {
             typeBuilder.addAnnotation(Deprecated::class.java)
         }
 
@@ -49,8 +48,8 @@ class JavaEnumGenerator(
                 val name = member.memberName
                 val value =
                     member.expectTrait(software.amazon.smithy.model.traits.EnumValueTrait::class.java).stringValue.get()
-                val enumConstantBuilder = TypeSpec.anonymousClassBuilder("\$S", value)
-                if (member.hasTrait(software.amazon.smithy.model.traits.DeprecatedTrait::class.java)) {
+                val enumConstantBuilder = TypeSpec.anonymousClassBuilder($$"$S", value)
+                if (member.hasTrait(DeprecatedTrait::class.java)) {
                     enumConstantBuilder.addAnnotation(Deprecated::class.java)
                 }
                 member.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
@@ -63,8 +62,8 @@ class JavaEnumGenerator(
                 val name = member.memberName
                 val value =
                     member.expectTrait(software.amazon.smithy.model.traits.EnumValueTrait::class.java).intValue.get()
-                val enumConstantBuilder = TypeSpec.anonymousClassBuilder("\$L", value)
-                if (member.hasTrait(software.amazon.smithy.model.traits.DeprecatedTrait::class.java)) {
+                val enumConstantBuilder = TypeSpec.anonymousClassBuilder($$"$L", value)
+                if (member.hasTrait(DeprecatedTrait::class.java)) {
                     enumConstantBuilder.addAnnotation(Deprecated::class.java)
                 }
                 member.getTrait(DocumentationTrait::class.java).ifPresent { trait ->
@@ -72,24 +71,10 @@ class JavaEnumGenerator(
                 }
                 typeBuilder.addEnumConstant(name, enumConstantBuilder.build())
             }
-        } else if (shape is StringShape && shape.hasTrait(EnumTrait::class.java)) {
-            val enumTrait = shape.expectTrait(EnumTrait::class.java)
-            for (definition in enumTrait.values) {
-                val name = definition.name.orElseGet { definition.value.uppercase().replace(" ", "_") }
-                val value = definition.value
-                val enumConstantBuilder = TypeSpec.anonymousClassBuilder("\$S", value)
-                if (definition.isDeprecated) {
-                    enumConstantBuilder.addAnnotation(Deprecated::class.java)
-                }
-                definition.documentation.ifPresent { doc ->
-                    enumConstantBuilder.addJavadoc("\$L\n", doc)
-                }
-                typeBuilder.addEnumConstant(name, enumConstantBuilder.build())
-            }
         }
 
         // Add fallback constant for backward compatibility
-        val fallbackValueStr = if (isIntEnum) "null" else "\$S"
+        val fallbackValueStr = if (isIntEnum) "null" else $$"$S"
         val fallbackValueArg = if (isIntEnum) emptyArray<Any>() else arrayOf("UNKNOWN_TO_SDK_VERSION")
 
         val fallbackBuilder = TypeSpec.anonymousClassBuilder(fallbackValueStr, *fallbackValueArg)
