@@ -20,10 +20,6 @@ class JacksonIntegration : JavaCodegenIntegration {
 		member: MemberShape,
 		parameter: ParameterSpec.Builder
 	) {
-		if (!isEnabled(context)) {
-			return
-		}
-
 		parameter.addAnnotation(
 			AnnotationSpec.builder(jsonProperty)
 				.addMember("value", $$"$S", member.memberName)
@@ -37,9 +33,6 @@ class JacksonIntegration : JavaCodegenIntegration {
 		wireName: String,
 		parameter: ParameterSpec.Builder
 	) {
-		if (!isEnabled(context)) {
-			return
-		}
 		parameter.addAnnotation(
 			AnnotationSpec.builder(jsonProperty)
 				.addMember("value", $$"$S", wireName)
@@ -52,9 +45,6 @@ class JacksonIntegration : JavaCodegenIntegration {
 		shape: Shape,
 		constantBuilder: TypeSpec.Builder
 	) {
-		if (!isEnabled(context)) {
-			return
-		}
 		constantBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonEnumDefaultValue"))
 	}
 
@@ -63,9 +53,6 @@ class JacksonIntegration : JavaCodegenIntegration {
 		shape: Shape,
 		getterBuilder: MethodSpec.Builder
 	) {
-		if (!isEnabled(context)) {
-			return
-		}
 		getterBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonValue"))
 	}
 
@@ -74,9 +61,6 @@ class JacksonIntegration : JavaCodegenIntegration {
 		shape: Shape,
 		creatorBuilder: MethodSpec.Builder
 	) {
-		if (!isEnabled(context)) {
-			return
-		}
 		creatorBuilder.addAnnotation(ClassName.get("com.fasterxml.jackson.annotation", "JsonCreator"))
 	}
 
@@ -87,9 +71,6 @@ class JacksonIntegration : JavaCodegenIntegration {
 		unknownClassName: ClassName,
 		variants: List<JavaUnionVariant>
 	) {
-		if (!isEnabled(context)) {
-			return
-		}
 		typeBuilder.addAnnotation(
 			AnnotationSpec.builder(ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
 				.addMember("use", $$"$T.Id.NAME", ClassName.get("com.fasterxml.jackson.annotation", "JsonTypeInfo"))
@@ -115,15 +96,4 @@ class JacksonIntegration : JavaCodegenIntegration {
 		}
 		typeBuilder.addAnnotation(subTypesBuilder.build())
 	}
-
-	private fun resolveSerializationLibrary(context: JavaCodegenContext): String {
-		val configured = context.settings.getString("serializationLibrary")
-		return when (context.target) {
-			JavaCodegenTarget.SERVER -> configured ?: "jackson"
-			JavaCodegenTarget.MODEL -> configured ?: "jackson"
-			JavaCodegenTarget.CLIENT -> configured ?: "none"
-		}
-	}
-
-	private fun isEnabled(context: JavaCodegenContext): Boolean = resolveSerializationLibrary(context) == "jackson"
 }

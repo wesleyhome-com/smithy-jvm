@@ -6,8 +6,6 @@ class ClientIntegration : JavaCodegenIntegration {
     override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.CLIENT
 
     override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
-        val serializationLibrary = context.settings.getString("serializationLibrary") ?: "none"
-        val httpClientLibrary = context.settings.getString("httpClientLibrary") ?: "jdk"
         return listOf(
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_STRUCTURES,
@@ -27,11 +25,11 @@ class ClientIntegration : JavaCodegenIntegration {
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_CORE,
-                generators = listOf(JavaClientCoreAbstractionsGenerator(serializationLibrary, httpClientLibrary))
+                generators = listOf(JavaClientCoreAbstractionsGenerator())
             ),
             JavaGeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_SERVICE,
-                generators = listOf(JavaClientGenerator(serializationLibrary, httpClientLibrary))
+                generators = listOf(JavaClientGenerator())
             )
         )
     }

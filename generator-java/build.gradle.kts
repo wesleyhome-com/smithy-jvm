@@ -5,8 +5,6 @@ plugins {
 dependencies {
 	implementation(project(":generator-core"))
 	implementation(project(":generator-java-spi"))
-	implementation(project(":generator-java-jackson"))
-	implementation(project(":generator-java-validation"))
 
 	// JavaPoet for clean Java code generation
 	implementation(libs.javapoet)
@@ -18,6 +16,8 @@ dependencies {
 	testImplementation(platform(libs.junit.bom))
 	testImplementation(libs.junit.jupiter)
 	testImplementation(libs.assertk.core)
+	testImplementation(project(":generator-java-jackson"))
+	testImplementation(project(":generator-java-validation"))
 	testRuntimeOnly(libs.junit.platform.launcher)
 
 	// Smithy testing utilities to validate models in memory

@@ -3,7 +3,6 @@ package com.wesleyhome.smithy.generator
 import com.palantir.javapoet.ClassName
 import com.palantir.javapoet.JavaFile
 import com.palantir.javapoet.MethodSpec
-import com.palantir.javapoet.ParameterizedTypeName
 import com.palantir.javapoet.TypeName
 import com.palantir.javapoet.TypeSpec
 import software.amazon.smithy.codegen.core.SymbolProvider
@@ -23,10 +22,7 @@ import javax.lang.model.element.Modifier
 /**
  * Generates a production-ready Java Client for a Smithy Service, using the Builder pattern.
  */
-class JavaClientGenerator(
-    private val serializationLibrary: String = "none",
-    private val httpClientLibrary: String = "jdk"
-) : ShapeGenerator<ServiceShape> {
+class JavaClientGenerator : ShapeGenerator<ServiceShape> {
     override val shapeType: Class<ServiceShape> = ServiceShape::class.java
 
     override fun generate(shape: ServiceShape, model: Model, symbolProvider: SymbolProvider): ShapeGenerator.Result {
@@ -101,21 +97,6 @@ class JavaClientGenerator(
                 .build()
         )
 
-        // 4. Convenience create method (if defaults exist)
-        if (httpClientLibrary != "none" && serializationLibrary != "none") {
-            interfaceBuilder.addMethod(
-                MethodSpec.methodBuilder("create")
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                    .addJavadoc("Creates a client with default transport and codec settings for the given base URL.\n\n")
-                    .addJavadoc("@param baseUrl The base URL of the service.\n")
-                    .addJavadoc("@return A configured client instance.\n")
-                    .addParameter(String::class.java, "baseUrl")
-                    .returns(ClassName.get(packageName, interfaceName))
-                    .addStatement("return builder().baseUrl(baseUrl).build()")
-                    .build()
-            )
-        }
-
         val files = listOf(
             JavaFile.builder(packageName, interfaceBuilder.build()).build(),
             JavaFile.builder(packageName, implementationBuilder.build()).build(),
@@ -127,7 +108,6 @@ class JavaClientGenerator(
 
     private fun generateBuilderInterface(packageName: String, interfaceName: String): TypeSpec {
         val builderInterfaceType = ClassName.get(packageName, interfaceName, "Builder")
-        val unaryOperator = ClassName.get("java.util.function", "UnaryOperator")
 
         val builder = TypeSpec.interfaceBuilder("Builder")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -163,75 +143,6 @@ class JavaClientGenerator(
                     .build()
             )
 
-        // Convenience configurers
-        if (httpClientLibrary == "jdk") {
-            builder.addMethod(
-                MethodSpec.methodBuilder("jdkHttpClient")
-                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                    .addJavadoc("Configures the default JDK HttpClient via a UnaryOperator.\n\n")
-                    .addJavadoc("@param configurer A function that takes the default builder and returns a configured one.\n")
-                    .addJavadoc("@return This builder.\n")
-                    .addParameter(
-                        ParameterizedTypeName.get(
-                            unaryOperator,
-                            ClassName.get("java.net.http", "HttpClient", "Builder")
-                        ), "configurer"
-                    )
-                    .returns(builderInterfaceType)
-                    .build()
-            )
-        } else if (httpClientLibrary == "okhttp") {
-            builder.addMethod(
-                MethodSpec.methodBuilder("okHttp")
-                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                    .addJavadoc("Configures the default OkHttp client via a UnaryOperator.\n\n")
-                    .addJavadoc("@param configurer A function that takes the default builder and returns a configured one.\n")
-                    .addJavadoc("@return This builder.\n")
-                    .addParameter(
-                        ParameterizedTypeName.get(
-                            unaryOperator,
-                            ClassName.get("okhttp3", "OkHttpClient", "Builder")
-                        ), "configurer"
-                    )
-                    .returns(builderInterfaceType)
-                    .build()
-            )
-        }
-
-        if (serializationLibrary == "jackson") {
-            builder.addMethod(
-                MethodSpec.methodBuilder("jackson")
-                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                    .addJavadoc("Configures the default Jackson ObjectMapper via a UnaryOperator.\n\n")
-                    .addJavadoc("@param configurer A function that takes the default mapper and returns a configured one.\n")
-                    .addJavadoc("@return This builder.\n")
-                    .addParameter(
-                        ParameterizedTypeName.get(
-                            unaryOperator,
-                            ClassName.get("com.fasterxml.jackson.databind", "ObjectMapper")
-                        ), "configurer"
-                    )
-                    .returns(builderInterfaceType)
-                    .build()
-            )
-        } else if (serializationLibrary == "gson") {
-            builder.addMethod(
-                MethodSpec.methodBuilder("gson")
-                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                    .addJavadoc("Configures the default GSON Builder via a UnaryOperator.\n\n")
-                    .addJavadoc("@param configurer A function that takes the default builder and returns a configured one.\n")
-                    .addJavadoc("@return This builder.\n")
-                    .addParameter(
-                        ParameterizedTypeName.get(
-                            unaryOperator,
-                            ClassName.get("com.google.gson", "GsonBuilder")
-                        ), "configurer"
-                    )
-                    .returns(builderInterfaceType)
-                    .build()
-            )
-        }
-
         builder.addMethod(
             MethodSpec.methodBuilder("build")
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
@@ -251,7 +162,6 @@ class JavaClientGenerator(
     ): TypeSpec {
         val builderImplName = "Default${interfaceName}Builder"
         val builderInterfaceType = ClassName.get(packageName, interfaceName, "Builder")
-        val unaryOperator = ClassName.get("java.util.function", "UnaryOperator")
 
         val builder = TypeSpec.classBuilder(builderImplName)
             .addModifiers(Modifier.FINAL) // package-private
@@ -294,81 +204,6 @@ class JavaClientGenerator(
                 .build()
         )
 
-        // Implementation of convenience configurers
-        if (httpClientLibrary == "jdk") {
-            builder.addMethod(
-                MethodSpec.methodBuilder("jdkHttpClient")
-                    .addAnnotation(Override::class.java)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(
-                        ParameterizedTypeName.get(
-                            unaryOperator,
-                            ClassName.get("java.net.http", "HttpClient", "Builder")
-                        ), "configurer"
-                    )
-                    .returns(builderInterfaceType)
-                    .addStatement(
-                        $$"this.transport = new $T(configurer)",
-                        ClassName.get(packageName, "JdkHttpTransport")
-                    )
-                    .addStatement("return this")
-                    .build()
-            )
-        } else if (httpClientLibrary == "okhttp") {
-            builder.addMethod(
-                MethodSpec.methodBuilder("okHttp")
-                    .addAnnotation(Override::class.java)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(
-                        ParameterizedTypeName.get(
-                            unaryOperator,
-                            ClassName.get("okhttp3", "OkHttpClient", "Builder")
-                        ), "configurer"
-                    )
-                    .returns(builderInterfaceType)
-                    .addStatement(
-                        $$"this.transport = new $T(configurer)",
-                        ClassName.get(packageName, "OkHttpTransport")
-                    )
-                    .addStatement("return this")
-                    .build()
-            )
-        }
-
-        if (serializationLibrary == "jackson") {
-            builder.addMethod(
-                MethodSpec.methodBuilder("jackson")
-                    .addAnnotation(Override::class.java)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(
-                        ParameterizedTypeName.get(
-                            unaryOperator,
-                            ClassName.get("com.fasterxml.jackson.databind", "ObjectMapper")
-                        ), "configurer"
-                    )
-                    .returns(builderInterfaceType)
-                    .addStatement($$"this.codec = new $T(configurer)", ClassName.get(packageName, "JacksonCodec"))
-                    .addStatement("return this")
-                    .build()
-            )
-        } else if (serializationLibrary == "gson") {
-            builder.addMethod(
-                MethodSpec.methodBuilder("gson")
-                    .addAnnotation(Override::class.java)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(
-                        ParameterizedTypeName.get(
-                            unaryOperator,
-                            ClassName.get("com.google.gson", "GsonBuilder")
-                        ), "configurer"
-                    )
-                    .returns(builderInterfaceType)
-                    .addStatement($$"this.codec = new $T(configurer)", ClassName.get(packageName, "GsonCodec"))
-                    .addStatement("return this")
-                    .build()
-            )
-        }
-
         val buildMethod = MethodSpec.methodBuilder("build")
             .addAnnotation(Override::class.java)
             .addModifiers(Modifier.PUBLIC)
@@ -378,42 +213,18 @@ class JavaClientGenerator(
             .endControlFlow()
 
         buildMethod.beginControlFlow("if (this.transport == null)")
-        when (httpClientLibrary) {
-            "jdk" -> {
-                buildMethod.addStatement($$"this.transport = new $T()", ClassName.get(packageName, "JdkHttpTransport"))
-            }
-
-            "okhttp" -> {
-                buildMethod.addStatement($$"this.transport = new $T()", ClassName.get(packageName, "OkHttpTransport"))
-            }
-
-            else -> {
-                buildMethod.addStatement(
-                    $$"throw new $T(\"No HttpTransport configured and no default library specified.\")",
-                    IllegalStateException::class.java
-                )
-            }
-        }
-        buildMethod.endControlFlow()
+            .addStatement(
+                $$"throw new $T(\"HttpTransport must be configured\")",
+                IllegalStateException::class.java
+            )
+            .endControlFlow()
 
         buildMethod.beginControlFlow("if (this.codec == null)")
-        when (serializationLibrary) {
-            "jackson" -> {
-                buildMethod.addStatement($$"this.codec = new $T()", ClassName.get(packageName, "JacksonCodec"))
-            }
-
-            "gson" -> {
-                buildMethod.addStatement($$"this.codec = new $T()", ClassName.get(packageName, "GsonCodec"))
-            }
-
-            else -> {
-                buildMethod.addStatement(
-                    $$"throw new $T(\"No ProtocolCodec configured and no default library specified.\")",
-                    IllegalStateException::class.java
-                )
-            }
-        }
-        buildMethod.endControlFlow()
+            .addStatement(
+                $$"throw new $T(\"ProtocolCodec must be configured\")",
+                IllegalStateException::class.java
+            )
+            .endControlFlow()
 
         buildMethod.addStatement(
             $$"return new $T(this.transport, this.codec, this.baseUrl)",

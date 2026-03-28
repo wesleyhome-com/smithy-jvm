@@ -15,6 +15,10 @@ object JavaGeneratorFamilies {
 	const val CLIENT_UNIONS = "client:unions"
 	const val CLIENT_CORE = "client:core"
 	const val CLIENT_SERVICE = "client:service"
+	const val CLIENT_HTTP_TRANSPORT_JDK = "client:http-transport:jdk"
+	const val CLIENT_HTTP_TRANSPORT_OKHTTP = "client:http-transport:okhttp"
+	const val CLIENT_PROTOCOL_CODEC_JACKSON = "client:protocol-codec:jackson"
+	const val CLIENT_PROTOCOL_CODEC_GSON = "client:protocol-codec:gson"
 
 	const val SERVER_STRUCTURES = "server:structures"
 	const val SERVER_EXCEPTIONS = "server:exceptions"

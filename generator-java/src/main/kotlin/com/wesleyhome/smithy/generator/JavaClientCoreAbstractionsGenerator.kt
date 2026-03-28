@@ -17,8 +17,6 @@ import javax.lang.model.element.Modifier
  * Generates core HTTP and Protocol abstractions required by the Java Client.
  */
 class JavaClientCoreAbstractionsGenerator(
-    private val serializationLibrary: String = "none",
-    private val httpClientLibrary: String = "jdk"
 ) : ShapeGenerator<ServiceShape> {
     override val shapeType: Class<ServiceShape> = ServiceShape::class.java
 
@@ -33,23 +31,11 @@ class JavaClientCoreAbstractionsGenerator(
             generateProtocolCodec(baseNamespace)
         )
 
-        // Generate specific adapters if configured
-        if (httpClientLibrary == "jdk") {
-            files.add(generateJdkHttpTransport(baseNamespace))
-        } else if (httpClientLibrary == "okhttp") {
-            files.add(generateOkHttpTransport(baseNamespace))
-        }
-
-        if (serializationLibrary == "jackson") {
-            files.add(generateJacksonCodec(baseNamespace))
-        } else if (serializationLibrary == "gson") {
-            files.add(generateGsonCodec(baseNamespace))
-        }
-
         return ShapeGenerator.Result(files.map { it.toGeneratedFile() })
     }
 
-    private fun generateJdkHttpTransport(packageName: String): JavaFile {
+    companion object {
+        fun generateJdkHttpTransport(packageName: String): JavaFile {
         val httpClient = ClassName.get("java.net.http", "HttpClient")
         val httpClientBuilder = ClassName.get("java.net.http", "HttpClient", "Builder")
         val httpRequest = ClassName.get("java.net.http", "HttpRequest")
@@ -121,7 +107,7 @@ class JavaClientCoreAbstractionsGenerator(
         return JavaFile.builder(packageName, typeBuilder.build()).build()
     }
 
-    private fun generateOkHttpTransport(packageName: String): JavaFile {
+        fun generateOkHttpTransport(packageName: String): JavaFile {
         val okHttpClient = ClassName.get("okhttp3", "OkHttpClient")
         val okHttpBuilder = ClassName.get("okhttp3", "OkHttpClient", "Builder")
         val okHttpRequest = ClassName.get("okhttp3", "Request")
@@ -186,7 +172,7 @@ class JavaClientCoreAbstractionsGenerator(
         return JavaFile.builder(packageName, typeBuilder.build()).build()
     }
 
-    private fun generateJacksonCodec(packageName: String): JavaFile {
+        fun generateJacksonCodec(packageName: String): JavaFile {
         val objectMapper = ClassName.get("com.fasterxml.jackson.databind", "ObjectMapper")
         val unaryOperator = ClassName.get("java.util.function", "UnaryOperator")
 
@@ -243,7 +229,7 @@ class JavaClientCoreAbstractionsGenerator(
         return JavaFile.builder(packageName, typeBuilder.build()).build()
     }
 
-    private fun generateGsonCodec(packageName: String): JavaFile {
+        fun generateGsonCodec(packageName: String): JavaFile {
         val gson = ClassName.get("com.google.gson", "Gson")
         val gsonBuilder = ClassName.get("com.google.gson", "GsonBuilder")
         val unaryOperator = ClassName.get("java.util.function", "UnaryOperator")
@@ -299,6 +285,7 @@ class JavaClientCoreAbstractionsGenerator(
             )
 
         return JavaFile.builder(packageName, typeBuilder.build()).build()
+    }
     }
 
     private fun generateHttpRequest(packageName: String): JavaFile {

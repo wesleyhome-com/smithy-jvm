@@ -1,6 +1,8 @@
 package com.wesleyhome.library.server;
 
+import com.wesleyhome.library.client.okhttp.client.JacksonCodec;
 import com.wesleyhome.library.client.okhttp.client.LibraryServiceClient;
+import com.wesleyhome.library.client.okhttp.client.OkHttpTransport;
 import com.wesleyhome.library.client.okhttp.model.catalog.SearchCatalogInputDTO;
 import com.wesleyhome.library.client.okhttp.model.catalog.SearchCatalogOutputDTO;
 import org.junit.jupiter.api.Test;
@@ -15,7 +17,11 @@ public class OkHttpJacksonIntegrationTest
     @Test
     public void testSearchCatalog()
             throws IOException {
-        LibraryServiceClient client = LibraryServiceClient.create(getBaseUrl());
+        LibraryServiceClient client = LibraryServiceClient.builder()
+                .baseUrl(getBaseUrl())
+                .transport(new OkHttpTransport())
+                .codec(new JacksonCodec())
+                .build();
 
         SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0, "integration-test");
         SearchCatalogOutputDTO response = client.searchCatalog(input);

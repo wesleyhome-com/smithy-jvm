@@ -1,5 +1,7 @@
 package com.wesleyhome.library.server;
 
+import com.wesleyhome.library.client.jackson.client.JacksonCodec;
+import com.wesleyhome.library.client.jackson.client.JdkHttpTransport;
 import com.wesleyhome.library.client.jackson.client.LibraryServiceClient;
 import com.wesleyhome.library.client.jackson.model.catalog.SearchCatalogInputDTO;
 import com.wesleyhome.library.client.jackson.model.catalog.SearchCatalogOutputDTO;
@@ -13,7 +15,11 @@ public class JacksonJdkIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testSearchCatalog() throws IOException {
-        LibraryServiceClient client = LibraryServiceClient.create(getBaseUrl());
+        LibraryServiceClient client = LibraryServiceClient.builder()
+                .baseUrl(getBaseUrl())
+                .transport(new JdkHttpTransport())
+                .codec(new JacksonCodec())
+                .build();
 
         SearchCatalogInputDTO input = new SearchCatalogInputDTO("java", null, 0, "integration-test");
         SearchCatalogOutputDTO response = client.searchCatalog(input);

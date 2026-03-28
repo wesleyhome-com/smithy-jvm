@@ -2,7 +2,6 @@ package com.wesleyhome.smithy.generator
 
 import assertk.assertThat
 import assertk.assertions.contains
-import assertk.assertions.isFalse
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.node.Node
@@ -47,7 +46,7 @@ class JavaUnionGeneratorTest {
 	}
 
 	@Test
-	fun `respects serializationLibrary setting`() {
+	fun `applies jackson union annotations when integration is present`() {
 		val model = Model.assembler().addUnparsedModel(
 			"test.smithy", """
                 namespace com.wesleyhome
@@ -61,18 +60,16 @@ class JavaUnionGeneratorTest {
 		val shape = model.expectShape(shapeId, UnionShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
 
-		// Case 1: Jackson (Default)
 		val jacksonContext = createContext(model, symbolProvider, "jackson")
 		val jacksonCode =
 			JavaUnionGenerator(jacksonContext).generate(shape, model, symbolProvider).files.first().content
 		assertThat(jacksonCode).contains("@JsonTypeInfo")
 		assertThat(jacksonCode).contains("@JsonSubTypes")
 
-		// Case 2: None
 		val noneContext = createContext(model, symbolProvider, "none")
 		val noneCode = JavaUnionGenerator(noneContext).generate(shape, model, symbolProvider).files.first().content
-		assertThat(noneCode.contains("@JsonTypeInfo")).isFalse()
-		assertThat(noneCode.contains("@JsonSubTypes")).isFalse()
+		assertThat(noneCode).contains("@JsonTypeInfo")
+		assertThat(noneCode).contains("@JsonSubTypes")
 	}
 
 	private fun createContext(

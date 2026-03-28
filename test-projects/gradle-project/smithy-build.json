@@ -15,9 +15,7 @@
         "java-client": {
           "service": "com.wesleyhome.library#LibraryService",
           "package": "com.wesleyhome.library.client.jackson",
-          "dtoSuffix": "DTO",
-          "serializationLibrary": "jackson",
-          "httpClientLibrary": "jdk"
+          "dtoSuffix": "DTO"
         }
       }
     },
@@ -26,9 +24,7 @@
         "java-client": {
           "service": "com.wesleyhome.library#LibraryService",
           "package": "com.wesleyhome.library.client.gson",
-          "dtoSuffix": "DTO",
-          "serializationLibrary": "gson",
-          "httpClientLibrary": "jdk"
+          "dtoSuffix": "DTO"
         }
       }
     },
@@ -37,9 +33,7 @@
         "java-client": {
           "service": "com.wesleyhome.library#LibraryService",
           "package": "com.wesleyhome.library.client.bare",
-          "dtoSuffix": "DTO",
-          "serializationLibrary": "none",
-          "httpClientLibrary": "none"
+          "dtoSuffix": "DTO"
         }
       }
     },
@@ -48,9 +42,7 @@
         "java-client": {
           "service": "com.wesleyhome.library#LibraryService",
           "package": "com.wesleyhome.library.client.okhttp",
-          "dtoSuffix": "DTO",
-          "serializationLibrary": "jackson",
-          "httpClientLibrary": "okhttp"
+          "dtoSuffix": "DTO"
         }
       }
     },

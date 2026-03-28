@@ -2,7 +2,6 @@ package com.wesleyhome.smithy.generator
 
 import assertk.assertThat
 import assertk.assertions.contains
-import assertk.assertions.isFalse
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.node.Node
@@ -111,7 +110,7 @@ class JavaEnumGeneratorTest {
 	}
 
 	@Test
-	fun `respects serializationLibrary setting`() {
+	fun `applies jackson enum annotations when integration is present`() {
 		val model = Model.assembler()
 			.addUnparsedModel(
 				"test.smithy", """
@@ -129,17 +128,15 @@ class JavaEnumGeneratorTest {
 		val shape = model.expectShape(shapeId)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
 
-		// Case 1: Jackson (Default)
 		val jacksonContext = createContext(model, symbolProvider, "jackson")
 		val jacksonCode = JavaEnumGenerator(jacksonContext).generate(shape, model, symbolProvider).files.first().content
 		assertThat(jacksonCode).contains("@JsonValue")
 		assertThat(jacksonCode).contains("@JsonCreator")
 
-		// Case 2: None
 		val noneContext = createContext(model, symbolProvider, "none")
 		val noneCode = JavaEnumGenerator(noneContext).generate(shape, model, symbolProvider).files.first().content
-		assertThat(noneCode.contains("@JsonValue")).isFalse()
-		assertThat(noneCode.contains("@JsonCreator")).isFalse()
+		assertThat(noneCode).contains("@JsonValue")
+		assertThat(noneCode).contains("@JsonCreator")
 	}
 
 	private fun createContext(
