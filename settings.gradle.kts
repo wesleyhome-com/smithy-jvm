@@ -23,6 +23,8 @@ include(
 	":generator-spring-server",
 	":generator-core",
 	":generator-java-spi",
+	":generator-java-jackson",
+	":generator-java-validation",
 	":generator-java",
 	":gradle-plugin",
 	":maven-plugin",

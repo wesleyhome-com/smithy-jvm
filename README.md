@@ -39,6 +39,22 @@ pure domain models, lightweight client SDKs, or full-featured Spring Boot server
 - **Tag-Driven Domain Grouping**: Uses the Smithy `@tags` trait to map your API domains into organized Java packages and
   Spring Controllers.
 
+## Pluggable Integrations (SPI)
+
+The generator now uses a classpath-discovered integration SPI.
+
+- Build third-party integrations against `generator-java-spi` only.
+- Register integrations using `META-INF/services/com.wesleyhome.smithy.generator.JavaCodegenIntegration`.
+- Integrations are filtered by `supports(target)` and ordered by `priority()`.
+- Generator contributions are grouped by family (for example `model:structures`, `client:service`).
+- Exactly one integration wins per family. If multiple integrations claim the same family at the same priority,
+  generation fails fast.
+
+Bundled integrations are split into dedicated modules:
+
+- `generator-java-jackson`
+- `generator-java-validation`
+
 ## Known Limitations / Roadmap
 
 - **`@streaming` Trait**: Real-time streaming payloads (via `java.io.InputStream`, Reactive Streams, or Spring WebFlux)

@@ -11,6 +11,15 @@ import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
 
+/**
+ * Extension point for Java codegen customizations.
+ *
+ * Integrations are discovered via ServiceLoader, filtered by target, and ordered by [priority].
+ * Generator-producing integrations should contribute logical families through [generatorContributions].
+ *
+ * Hook methods receive mutable JavaPoet builders. Implementations are expected to mutate the provided
+ * builder instance in place.
+ */
 interface JavaCodegenIntegration {
     fun name(): String
 

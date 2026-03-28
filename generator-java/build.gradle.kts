@@ -5,6 +5,8 @@ plugins {
 dependencies {
 	implementation(project(":generator-core"))
 	implementation(project(":generator-java-spi"))
+	implementation(project(":generator-java-jackson"))
+	implementation(project(":generator-java-validation"))
 
 	// JavaPoet for clean Java code generation
 	implementation(libs.javapoet)

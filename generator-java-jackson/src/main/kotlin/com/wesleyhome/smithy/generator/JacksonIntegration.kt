@@ -20,7 +20,7 @@ class JacksonIntegration : JavaCodegenIntegration {
 		member: MemberShape,
 		parameter: ParameterSpec.Builder
 	) {
-		if (resolveSerializationLibrary(context) != "jackson") {
+		if (!isEnabled(context)) {
 			return
 		}
 
