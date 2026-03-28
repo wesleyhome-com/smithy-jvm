@@ -17,6 +17,10 @@ import java.util.ServiceLoader
  * Orchestrates model transformation, service closure computation, and strategy execution.
  */
 object JavaCodegenRunner {
+    private data class ContributionCandidate(
+        val integration: JavaCodegenIntegration,
+        val contribution: JavaGeneratorContribution
+    )
 
     /**
      * The result of the Java codegen orchestration.
@@ -104,7 +108,7 @@ object JavaCodegenRunner {
             codegenContext = codegenContext.copy(symbolProvider = symbolProvider)
         }
 
-        val strategies = activeIntegrations.flatMap { it.additionalShapeGenerators(codegenContext) }
+        val strategies = resolveStrategies(activeIntegrations, codegenContext)
 
         // 4. The Engine Pipeline: Iterate over shapes within the service closure
         val (generatedFiles, validationEvents) = shapeClosure
@@ -132,5 +136,33 @@ object JavaCodegenRunner {
             symbolProvider = symbolProvider,
             basePackage = basePackage
         )
+    }
+
+    private fun resolveStrategies(
+        integrations: List<JavaCodegenIntegration>,
+        context: JavaCodegenContext
+    ): List<ShapeGenerator<out Shape>> {
+        val candidatesByFamily = integrations
+            .flatMap { integration ->
+                integration.generatorContributions(context).map { contribution ->
+                    ContributionCandidate(integration = integration, contribution = contribution)
+                }
+            }
+            .groupBy { it.contribution.family }
+
+        return candidatesByFamily.values
+            .map { familyCandidates ->
+                val maxPriority = familyCandidates.maxOf { it.integration.priority() }
+                val winners = familyCandidates.filter { it.integration.priority() == maxPriority }
+                if (winners.size > 1) {
+                    val family = familyCandidates.first().contribution.family
+                    val names = winners.joinToString(", ") { it.integration.name() }
+                    throw IllegalStateException(
+                        "Multiple integrations claim family '$family' at priority $maxPriority: $names"
+                    )
+                }
+                winners.single().contribution.generators
+            }
+            .flatten()
     }
 }

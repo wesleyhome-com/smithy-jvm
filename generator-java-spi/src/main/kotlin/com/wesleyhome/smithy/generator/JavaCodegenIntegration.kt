@@ -21,6 +21,20 @@ interface JavaCodegenIntegration {
         symbolProvider: SymbolProvider
     ): SymbolProvider = symbolProvider
 
+    /**
+     * Contributes generators grouped by logical family. Runner picks one winner per family by priority.
+     */
+    fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
+        val generators = additionalShapeGenerators(context)
+        if (generators.isEmpty()) {
+            return emptyList()
+        }
+        return listOf(JavaGeneratorContribution(family = "${name()}:default", generators = generators))
+    }
+
+    /**
+     * Legacy convenience hook. Prefer [generatorContributions].
+     */
     fun additionalShapeGenerators(context: JavaCodegenContext): List<ShapeGenerator<out Shape>> = emptyList()
 
     fun onShapeGenerated(context: JavaCodegenContext, shape: Shape, typeSpec: TypeSpec.Builder) {}
