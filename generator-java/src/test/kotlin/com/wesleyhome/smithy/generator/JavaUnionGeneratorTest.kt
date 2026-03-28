@@ -26,7 +26,7 @@ class JavaUnionGeneratorTest {
 		val shapeId = ShapeId.from("com.wesleyhome#MyUnion")
 		val shape = model.expectShape(shapeId, UnionShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-		val context = createContext(model, symbolProvider, "jackson")
+		val context = createContext(model, symbolProvider)
 
 		val generator = JavaUnionGenerator(context)
 		val generatedFiles = generator.generate(shape, model, symbolProvider)
@@ -60,25 +60,24 @@ class JavaUnionGeneratorTest {
 		val shape = model.expectShape(shapeId, UnionShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
 
-		val jacksonContext = createContext(model, symbolProvider, "jackson")
+		val jacksonContext = createContext(model, symbolProvider)
 		val jacksonCode =
 			JavaUnionGenerator(jacksonContext).generate(shape, model, symbolProvider).files.first().content
 		assertThat(jacksonCode).contains("@JsonTypeInfo")
 		assertThat(jacksonCode).contains("@JsonSubTypes")
 
-		val noneContext = createContext(model, symbolProvider, "none")
-		val noneCode = JavaUnionGenerator(noneContext).generate(shape, model, symbolProvider).files.first().content
-		assertThat(noneCode).contains("@JsonTypeInfo")
-		assertThat(noneCode).contains("@JsonSubTypes")
+		val context = createContext(model, symbolProvider)
+		val code = JavaUnionGenerator(context).generate(shape, model, symbolProvider).files.first().content
+		assertThat(code).contains("@JsonTypeInfo")
+		assertThat(code).contains("@JsonSubTypes")
 	}
 
 	private fun createContext(
 		model: Model,
-		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider,
-		serializationLibrary: String
+		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider
 	): JavaCodegenContext {
 		val serviceShape = ServiceShape.builder().id("com.wesleyhome#TestService").version("1.0").build()
-		val settings = Node.objectNodeBuilder().withMember("serializationLibrary", serializationLibrary).build()
+		val settings = Node.objectNodeBuilder().build()
 		val integrations = listOf<JavaCodegenIntegration>(JacksonIntegration())
 		return JavaCodegenContext(
 			model = model,

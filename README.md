@@ -104,8 +104,7 @@ Configure the plugins within your projections. All plugins require the `service`
         "java-client": {
           "service": "com.wesleyhome#MyService",
           "package": "com.wesleyhome.client",
-          "serializationLibrary": "jackson",
-          "httpClientLibrary": "okhttp"
+          "dtoSuffix": "DTO"
         }
       }
     },
@@ -123,13 +122,13 @@ Configure the plugins within your projections. All plugins require the `service`
 
 ### Configuration Options
 
-| Option                 | Default                              | Roles  | Description                                                                              |
-|:-----------------------|:-------------------------------------|:-------|:-----------------------------------------------------------------------------------------|
-| `service`              | **Required**                         | All    | The Shape ID of the service to generate (e.g., `com.wesleyhome#MyService`).              |
-| `package`              | `com.wesleyhome.generated`           | All    | The base Java package for generated code.                                                |
-| `dtoSuffix`            | `DTO`                                | All    | Suffix added to generated structures (except Exceptions).                                |
-| `serializationLibrary` | `jackson` (Server) / `none` (Client) | All    | `jackson`, `gson`, or `none`. Controls generated annotations and default adapters.       |
-| `httpClientLibrary`    | `jdk`                                | Client | `jdk`, `okhttp`, or `none`. Controls which default `HttpTransport` adapter is generated. |
+| Option                 | Default                    | Roles  | Description                                                                 |
+|:-----------------------|:---------------------------|:-------|:----------------------------------------------------------------------------|
+| `service`              | **Required**               | All    | The Shape ID of the service to generate (e.g., `com.wesleyhome#MyService`). |
+| `package`              | `com.wesleyhome.generated` | All    | The base Java package for generated code.                                   |
+| `dtoSuffix`            | `DTO`                      | All    | Suffix added to generated structures (except Exceptions).                   |
+| `serializationLibrary` | Deprecated                 | All    | Classpath composition now controls serialization integrations.              |
+| `httpClientLibrary`    | Deprecated                 | Client | Classpath composition now controls HTTP transport integrations.             |
 
 ---
 

@@ -48,11 +48,7 @@ class JavaStructureGeneratorIntegrationsTest {
 		val integrations = listOf<JavaCodegenIntegration>(ValidationIntegration(), JacksonIntegration())
 		val context = JavaCodegenContext(
 			model = model,
-			settings = JavaSettings.from(
-				Node.objectNodeBuilder()
-					.withMember("serializationLibrary", "jackson")
-					.build()
-			),
+			settings = JavaSettings.from(Node.objectNodeBuilder().build()),
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,

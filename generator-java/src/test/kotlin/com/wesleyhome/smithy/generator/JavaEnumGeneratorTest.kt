@@ -34,7 +34,7 @@ class JavaEnumGeneratorTest {
 		val shapeId = ShapeId.from("com.wesleyhome#ProcessState")
 		val shape = model.expectShape(shapeId, EnumShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-		val context = createContext(model, symbolProvider, "jackson")
+		val context = createContext(model, symbolProvider)
 
 		val generator = JavaEnumGenerator(context)
 		val generatedFiles = generator.generate(shape, model, symbolProvider)
@@ -83,7 +83,7 @@ class JavaEnumGeneratorTest {
 		val shapeId = ShapeId.from("com.wesleyhome#IntStatus")
 		val shape = model.expectShape(shapeId, software.amazon.smithy.model.shapes.IntEnumShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-		val context = createContext(model, symbolProvider, "jackson")
+		val context = createContext(model, symbolProvider)
 
 		val generator = JavaEnumGenerator(context)
 		val generatedFiles = generator.generate(shape, model, symbolProvider)
@@ -128,24 +128,23 @@ class JavaEnumGeneratorTest {
 		val shape = model.expectShape(shapeId)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
 
-		val jacksonContext = createContext(model, symbolProvider, "jackson")
+		val jacksonContext = createContext(model, symbolProvider)
 		val jacksonCode = JavaEnumGenerator(jacksonContext).generate(shape, model, symbolProvider).files.first().content
 		assertThat(jacksonCode).contains("@JsonValue")
 		assertThat(jacksonCode).contains("@JsonCreator")
 
-		val noneContext = createContext(model, symbolProvider, "none")
-		val noneCode = JavaEnumGenerator(noneContext).generate(shape, model, symbolProvider).files.first().content
-		assertThat(noneCode).contains("@JsonValue")
-		assertThat(noneCode).contains("@JsonCreator")
+		val context = createContext(model, symbolProvider)
+		val code = JavaEnumGenerator(context).generate(shape, model, symbolProvider).files.first().content
+		assertThat(code).contains("@JsonValue")
+		assertThat(code).contains("@JsonCreator")
 	}
 
 	private fun createContext(
 		model: Model,
-		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider,
-		serializationLibrary: String
+		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider
 	): JavaCodegenContext {
 		val serviceShape = ServiceShape.builder().id("com.wesleyhome#TestService").version("1.0").build()
-		val settings = Node.objectNodeBuilder().withMember("serializationLibrary", serializationLibrary).build()
+		val settings = Node.objectNodeBuilder().build()
 		val integrations = listOf<JavaCodegenIntegration>(JacksonIntegration())
 		return JavaCodegenContext(
 			model = model,

@@ -31,7 +31,7 @@ class JavaExceptionGeneratorTest {
 		val shapeId = ShapeId.from("com.wesleyhome#NotFoundError")
 		val shape = model.expectShape(shapeId, StructureShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-		val context = createContext(model, symbolProvider, "jackson")
+		val context = createContext(model, symbolProvider)
 
 		val generator = JavaExceptionGenerator(context)
 		val generatedFiles = generator.generate(shape, model, symbolProvider)
@@ -67,7 +67,7 @@ class JavaExceptionGeneratorTest {
 		val shapeId = ShapeId.from("com.wesleyhome#InvalidInputError")
 		val shape = model.expectShape(shapeId, StructureShape::class.java)
 		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
-		val context = createContext(model, symbolProvider, "jackson")
+		val context = createContext(model, symbolProvider)
 
 		val generator = JavaExceptionGenerator(context)
 		val generatedFiles = generator.generate(shape, model, symbolProvider)
@@ -85,11 +85,10 @@ class JavaExceptionGeneratorTest {
 
 	private fun createContext(
 		model: Model,
-		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider,
-		serializationLibrary: String
+		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider
 	): JavaCodegenContext {
 		val serviceShape = ServiceShape.builder().id("com.wesleyhome#TestService").version("1.0").build()
-		val settings = Node.objectNodeBuilder().withMember("serializationLibrary", serializationLibrary).build()
+		val settings = Node.objectNodeBuilder().build()
 		val integrations = listOf<JavaCodegenIntegration>(JacksonIntegration())
 		return JavaCodegenContext(
 			model = model,
