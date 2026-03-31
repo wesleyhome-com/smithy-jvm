@@ -2,11 +2,15 @@ package com.wesleyhome.smithy.generator
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.doesNotContain
+import com.palantir.javapoet.MethodSpec
+import com.palantir.javapoet.TypeSpec
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.node.Node
 import software.amazon.smithy.model.shapes.EnumShape
 import software.amazon.smithy.model.shapes.ServiceShape
+import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.ShapeId
 
 class JavaEnumGeneratorTest {
@@ -139,13 +143,38 @@ class JavaEnumGeneratorTest {
 		assertThat(code).contains("@JsonCreator")
 	}
 
+	@Test
+	fun `does not invoke enum JavaPoet hooks on JavaCodegenIntegration-only implementations`() {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
+                ${'$'}version: "2"
+                namespace com.wesleyhome
+                enum Status {
+                    ACTIVE = "active"
+                }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
+
+		val shapeId = ShapeId.from("com.wesleyhome#Status")
+		val shape = model.expectShape(shapeId)
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+		val context = createContext(model, symbolProvider, listOf(LegacyLikeEnumHooksIntegration()))
+
+		val code = JavaEnumGenerator(context).generate(shape, model, symbolProvider).files.first().content
+
+		assertThat(code).doesNotContain("@Deprecated")
+	}
+
 	private fun createContext(
 		model: Model,
-		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider
+		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider,
+		integrations: List<JavaCodegenIntegration> = listOf(JacksonIntegration())
 	): JavaCodegenContext {
 		val serviceShape = ServiceShape.builder().id("com.wesleyhome#TestService").version("1.0").build()
 		val settings = Node.objectNodeBuilder().build()
-		val integrations = listOf<JavaCodegenIntegration>(JacksonIntegration())
 		return JavaCodegenContext(
 			model = model,
 			settings = JavaSettings.from(settings),
@@ -154,5 +183,36 @@ class JavaEnumGeneratorTest {
 			integrations = integrations,
 			target = JavaCodegenTarget.MODEL
 		)
+	}
+
+	private class LegacyLikeEnumHooksIntegration : JavaCodegenIntegration {
+		override fun name(): String = "legacy-like-enum-hooks"
+
+		@Suppress("unused")
+		fun onEnumUnknownConstantGenerated(
+			context: JavaCodegenContext,
+			shape: Shape,
+			constantBuilder: TypeSpec.Builder
+		) {
+			constantBuilder.addAnnotation(Deprecated::class.java)
+		}
+
+		@Suppress("unused")
+		fun onEnumValueGetterGenerated(
+			context: JavaCodegenContext,
+			shape: Shape,
+			getterBuilder: MethodSpec.Builder
+		) {
+			getterBuilder.addAnnotation(Deprecated::class.java)
+		}
+
+		@Suppress("unused")
+		fun onEnumFromValueGenerated(
+			context: JavaCodegenContext,
+			shape: Shape,
+			creatorBuilder: MethodSpec.Builder
+		) {
+			creatorBuilder.addAnnotation(Deprecated::class.java)
+		}
 	}
 }

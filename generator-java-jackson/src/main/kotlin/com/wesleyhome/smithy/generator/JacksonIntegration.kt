@@ -10,7 +10,7 @@ import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
 
-class JacksonIntegration : JavaCodegenIntegration, JavaPoetCodegenIntegration {
+class JacksonIntegration : JavaPoetCodegenIntegration {
 	private val jsonProperty = ClassName.get("com.fasterxml.jackson.annotation", "JsonProperty")
 
 	override fun name(): String = "jackson-integration"

@@ -15,7 +15,7 @@ import software.amazon.smithy.model.shapes.UnionShape
  * Keep implementations focused on Java emission concerns (annotations, modifiers, method decoration).
  * Lifecycle/model/generator selection concerns belong in [JavaCodegenIntegration].
  */
-interface JavaPoetCodegenIntegration {
+interface JavaPoetCodegenIntegration : JavaCodegenIntegration {
 	fun onShapeGenerated(context: JavaCodegenContext, shape: Shape, typeSpec: TypeSpec.Builder) {}
 
 	fun onRecordMemberGenerated(

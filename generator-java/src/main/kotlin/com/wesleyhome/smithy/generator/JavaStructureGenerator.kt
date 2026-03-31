@@ -45,8 +45,8 @@ class JavaStructureGenerator(
                 paramBuilder.addAnnotation(Deprecated::class.java)
             }
             codegenContext?.let { ctx ->
-                ctx.integrations.forEach { integration ->
-                    (integration as? JavaPoetCodegenIntegration)?.onRecordMemberGenerated(ctx, member, paramBuilder)
+                ctx.javaPoetIntegrations.forEach { integration ->
+                    integration.onRecordMemberGenerated(ctx, member, paramBuilder)
                 }
             }
 
@@ -92,8 +92,8 @@ class JavaStructureGenerator(
             typeBuilder.addMethod(compactConstructor.build())
         }
         codegenContext?.let { ctx ->
-            ctx.integrations.forEach { integration ->
-                (integration as? JavaPoetCodegenIntegration)?.onShapeGenerated(ctx, shape, typeBuilder)
+            ctx.javaPoetIntegrations.forEach { integration ->
+                integration.onShapeGenerated(ctx, shape, typeBuilder)
             }
         }
 

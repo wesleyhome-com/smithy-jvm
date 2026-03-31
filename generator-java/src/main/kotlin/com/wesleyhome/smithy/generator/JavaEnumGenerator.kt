@@ -79,12 +79,8 @@ class JavaEnumGenerator(
 
         val fallbackBuilder = TypeSpec.anonymousClassBuilder(fallbackValueStr, *fallbackValueArg)
         codegenContext?.let { ctx ->
-            ctx.integrations.forEach { integration ->
-	            (integration as? JavaPoetCodegenIntegration)?.onEnumUnknownConstantGenerated(
-		            ctx,
-		            shape,
-		            fallbackBuilder
-	            )
+            ctx.javaPoetIntegrations.forEach { integration ->
+                integration.onEnumUnknownConstantGenerated(ctx, shape, fallbackBuilder)
             }
         }
         typeBuilder.addEnumConstant("UNKNOWN_TO_SDK_VERSION", fallbackBuilder.build())
@@ -105,8 +101,8 @@ class JavaEnumGenerator(
             .returns(valueType)
             .addStatement("return value")
         codegenContext?.let { ctx ->
-            ctx.integrations.forEach { integration ->
-	            (integration as? JavaPoetCodegenIntegration)?.onEnumValueGetterGenerated(ctx, shape, getterBuilder)
+            ctx.javaPoetIntegrations.forEach { integration ->
+                integration.onEnumValueGetterGenerated(ctx, shape, getterBuilder)
             }
         }
 
@@ -139,15 +135,15 @@ class JavaEnumGenerator(
             .endControlFlow()
             .addStatement("return UNKNOWN_TO_SDK_VERSION")
         codegenContext?.let { ctx ->
-            ctx.integrations.forEach { integration ->
-	            (integration as? JavaPoetCodegenIntegration)?.onEnumFromValueGenerated(ctx, shape, creatorBuilder)
+            ctx.javaPoetIntegrations.forEach { integration ->
+                integration.onEnumFromValueGenerated(ctx, shape, creatorBuilder)
             }
         }
 
         typeBuilder.addMethod(creatorBuilder.build())
         codegenContext?.let { ctx ->
-            ctx.integrations.forEach { integration ->
-	            (integration as? JavaPoetCodegenIntegration)?.onShapeGenerated(ctx, shape, typeBuilder)
+            ctx.javaPoetIntegrations.forEach { integration ->
+                integration.onShapeGenerated(ctx, shape, typeBuilder)
             }
         }
 

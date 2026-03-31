@@ -11,4 +11,7 @@ data class JavaCodegenContext(
 	val symbolProvider: SymbolProvider,
 	val integrations: List<JavaCodegenIntegration>,
 	val target: JavaCodegenTarget
-)
+) {
+	val javaPoetIntegrations: List<JavaPoetCodegenIntegration>
+		get() = integrations.filterIsInstance<JavaPoetCodegenIntegration>()
+}

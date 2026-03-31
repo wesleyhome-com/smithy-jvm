@@ -66,19 +66,13 @@ class JavaUnionGenerator(
         typeBuilder.addType(unknownBuilder.build())
         typeBuilder.addPermittedSubclass(unknownClassName)
         codegenContext?.let { ctx ->
-            ctx.integrations.forEach { integration ->
-	            (integration as? JavaPoetCodegenIntegration)?.onUnionGenerated(
-		            ctx,
-		            shape,
-		            typeBuilder,
-		            unknownClassName,
-		            variants
-	            )
+            ctx.javaPoetIntegrations.forEach { integration ->
+                integration.onUnionGenerated(ctx, shape, typeBuilder, unknownClassName, variants)
             }
         }
         codegenContext?.let { ctx ->
-            ctx.integrations.forEach { integration ->
-	            (integration as? JavaPoetCodegenIntegration)?.onShapeGenerated(ctx, shape, typeBuilder)
+            ctx.javaPoetIntegrations.forEach { integration ->
+                integration.onShapeGenerated(ctx, shape, typeBuilder)
             }
         }
 

@@ -20,6 +20,14 @@ interface ShapeGenerator<T : Shape> {
      */
     fun generate(shape: T, model: Model, symbolProvider: SymbolProvider): Result
 
+	/**
+	 * Runtime dispatch entrypoint for callers holding [ShapeGenerator] as an erased type.
+	 */
+	fun generateUntyped(shape: Shape, model: Model, symbolProvider: SymbolProvider): Result {
+		@Suppress("UNCHECKED_CAST")
+		return generate(shape as T, model, symbolProvider)
+	}
+
     /**
      * The result of a generation execution.
      */

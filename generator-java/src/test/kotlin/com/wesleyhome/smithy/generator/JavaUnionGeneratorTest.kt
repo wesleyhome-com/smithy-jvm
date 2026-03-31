@@ -2,6 +2,9 @@ package com.wesleyhome.smithy.generator
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.doesNotContain
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.TypeSpec
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.node.Node
@@ -72,13 +75,33 @@ class JavaUnionGeneratorTest {
 		assertThat(code).contains("@JsonSubTypes")
 	}
 
+	@Test
+	fun `does not invoke union JavaPoet hooks on JavaCodegenIntegration-only implementations`() {
+		val model = Model.assembler().addUnparsedModel(
+			"test.smithy", """
+                namespace com.wesleyhome
+                union MyUnion {
+                    foo: String
+                }
+            """.trimIndent()
+		).assemble().unwrap()
+
+		val shapeId = ShapeId.from("com.wesleyhome#MyUnion")
+		val shape = model.expectShape(shapeId, UnionShape::class.java)
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+		val context = createContext(model, symbolProvider, listOf(LegacyLikeUnionHooksIntegration()))
+		val code = JavaUnionGenerator(context).generate(shape, model, symbolProvider).files.first().content
+
+		assertThat(code).doesNotContain("@Deprecated")
+	}
+
 	private fun createContext(
 		model: Model,
-		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider
+		symbolProvider: software.amazon.smithy.codegen.core.SymbolProvider,
+		integrations: List<JavaCodegenIntegration> = listOf(JacksonIntegration())
 	): JavaCodegenContext {
 		val serviceShape = ServiceShape.builder().id("com.wesleyhome#TestService").version("1.0").build()
 		val settings = Node.objectNodeBuilder().build()
-		val integrations = listOf<JavaCodegenIntegration>(JacksonIntegration())
 		return JavaCodegenContext(
 			model = model,
 			settings = JavaSettings.from(settings),
@@ -87,5 +110,20 @@ class JavaUnionGeneratorTest {
 			integrations = integrations,
 			target = JavaCodegenTarget.MODEL
 		)
+	}
+
+	private class LegacyLikeUnionHooksIntegration : JavaCodegenIntegration {
+		override fun name(): String = "legacy-like-union-hooks"
+
+		@Suppress("unused")
+		fun onUnionGenerated(
+			context: JavaCodegenContext,
+			shape: UnionShape,
+			typeBuilder: TypeSpec.Builder,
+			unknownClassName: ClassName,
+			variants: List<JavaUnionVariant>
+		) {
+			typeBuilder.addAnnotation(Deprecated::class.java)
+		}
 	}
 }
