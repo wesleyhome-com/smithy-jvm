@@ -5,8 +5,8 @@ class ClientHttpOkHttpIntegration : JavaCodegenIntegration {
 
 	override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.CLIENT
 
-	override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> = listOf(
-		JavaGeneratorContribution(
+	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> = listOf(
+		GeneratorContribution(
 			family = JavaGeneratorFamilies.CLIENT_HTTP_TRANSPORT_OKHTTP,
 			generators = listOf(JavaClientOkHttpTransportGenerator())
 		)

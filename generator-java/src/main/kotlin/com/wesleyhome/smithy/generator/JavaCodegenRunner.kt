@@ -19,7 +19,7 @@ import java.util.ServiceLoader
 object JavaCodegenRunner {
     private data class ContributionCandidate(
         val integration: JavaCodegenIntegration,
-        val contribution: JavaGeneratorContribution
+        val contribution: GeneratorContribution
     )
 
     /**

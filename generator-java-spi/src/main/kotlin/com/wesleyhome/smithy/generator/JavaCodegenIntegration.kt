@@ -30,12 +30,12 @@ interface JavaCodegenIntegration {
     /**
      * Contributes generators grouped by logical family. Runner picks one winner per family by priority.
      */
-    fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
+    fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
         val generators = additionalShapeGenerators(context)
         if (generators.isEmpty()) {
             return emptyList()
         }
-        return listOf(JavaGeneratorContribution(family = "${name()}:default", generators = generators))
+        return listOf(GeneratorContribution(family = "${name()}:default", generators = generators))
     }
 
     /**

@@ -5,8 +5,8 @@ class ClientCodecJacksonIntegration : JavaCodegenIntegration {
 
 	override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.CLIENT
 
-	override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> = listOf(
-		JavaGeneratorContribution(
+	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> = listOf(
+		GeneratorContribution(
 			family = JavaGeneratorFamilies.CLIENT_PROTOCOL_CODEC_JACKSON,
 			generators = listOf(JavaClientJacksonCodecGenerator())
 		)

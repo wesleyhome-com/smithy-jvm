@@ -5,37 +5,37 @@ class SpringServerIntegration : JavaCodegenIntegration {
 
     override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.SERVER
 
-    override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
+	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
         return listOf(
-            JavaGeneratorContribution(
+	        GeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_STRUCTURES,
                 generators = listOf(JavaStructureGenerator(context))
             ),
-            JavaGeneratorContribution(
+	        GeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_EXCEPTIONS,
                 generators = listOf(JavaExceptionGenerator(context))
             ),
-            JavaGeneratorContribution(
+	        GeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_ENUMS,
                 generators = listOf(JavaEnumGenerator(context))
             ),
-            JavaGeneratorContribution(
+	        GeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_UNIONS,
                 generators = listOf(JavaUnionGenerator(context))
             ),
-            JavaGeneratorContribution(
+	        GeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_API,
                 generators = listOf(JavaSpringOperationApiGenerator())
             ),
-            JavaGeneratorContribution(
+	        GeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_CONTROLLER,
                 generators = listOf(JavaSpringControllerGenerator())
             ),
-            JavaGeneratorContribution(
+	        GeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_EXCEPTION_HANDLER,
                 generators = listOf(JavaSpringGlobalExceptionHandlerGenerator())
             ),
-            JavaGeneratorContribution(
+	        GeneratorContribution(
                 family = JavaGeneratorFamilies.SERVER_FALLBACK_CONFIG,
                 generators = listOf(JavaSpringFallbackConfigGenerator())
             )

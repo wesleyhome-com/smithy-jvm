@@ -5,29 +5,29 @@ class ClientIntegration : JavaCodegenIntegration {
 
     override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.CLIENT
 
-    override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
+    override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
         return listOf(
-            JavaGeneratorContribution(
+            GeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_STRUCTURES,
 	            generators = listOf(JavaStructureGenerator(context))
             ),
-            JavaGeneratorContribution(
+            GeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_EXCEPTIONS,
                 generators = listOf(JavaExceptionGenerator(context))
             ),
-            JavaGeneratorContribution(
+            GeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_ENUMS,
                 generators = listOf(JavaEnumGenerator(context))
             ),
-            JavaGeneratorContribution(
+            GeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_UNIONS,
                 generators = listOf(JavaUnionGenerator(context))
             ),
-            JavaGeneratorContribution(
+            GeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_CORE,
                 generators = listOf(JavaClientCoreAbstractionsGenerator())
             ),
-            JavaGeneratorContribution(
+            GeneratorContribution(
                 family = JavaGeneratorFamilies.CLIENT_SERVICE,
                 generators = listOf(JavaClientGenerator())
             )

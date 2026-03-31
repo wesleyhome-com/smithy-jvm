@@ -137,9 +137,9 @@ class JavaCodegenRunnerConflictTest {
 
 		override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.MODEL
 
-		override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
+		override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
 			return listOf(
-				JavaGeneratorContribution(
+				GeneratorContribution(
 					family = "test:conflict",
 					generators = listOf(NoOpShapeGenerator())
 				)
@@ -154,9 +154,9 @@ class JavaCodegenRunnerConflictTest {
 
 		override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.MODEL
 
-		override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
+		override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
 			return listOf(
-				JavaGeneratorContribution(
+				GeneratorContribution(
 					family = "test:conflict",
 					generators = listOf(NoOpShapeGenerator())
 				)
@@ -198,9 +198,9 @@ class JavaCodegenRunnerConflictTest {
 
 		override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.CLIENT
 
-		override fun generatorContributions(context: JavaCodegenContext): List<JavaGeneratorContribution> {
+		override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
 			return listOf(
-				JavaGeneratorContribution(
+				GeneratorContribution(
 					family = family,
 					generators = listOf(MarkerServiceGenerator(marker))
 				)
