@@ -96,9 +96,7 @@ object JavaCodegenRunner {
                 strategies
                     .filter { it.shapeType.isInstance(shape) }
                     .map { strategy ->
-                        @Suppress("UNCHECKED_CAST")
-                        val shapeGenerator = strategy as ShapeGenerator<Shape>
-                        val result = shapeGenerator.generate(shape, finalContext.model, finalContext.symbolProvider)
+                        val result = strategy.generateUntyped(shape, finalContext.model, finalContext.symbolProvider)
                         result.files to result.validationEvents
                     }
             }
