@@ -46,7 +46,7 @@ class JavaStructureGenerator(
             }
             codegenContext?.let { ctx ->
                 ctx.integrations.forEach { integration ->
-                    integration.onRecordMemberGenerated(ctx, member, paramBuilder)
+                    (integration as? JavaPoetCodegenIntegration)?.onRecordMemberGenerated(ctx, member, paramBuilder)
                 }
             }
 
@@ -93,7 +93,7 @@ class JavaStructureGenerator(
         }
         codegenContext?.let { ctx ->
             ctx.integrations.forEach { integration ->
-                integration.onShapeGenerated(ctx, shape, typeBuilder)
+                (integration as? JavaPoetCodegenIntegration)?.onShapeGenerated(ctx, shape, typeBuilder)
             }
         }
 

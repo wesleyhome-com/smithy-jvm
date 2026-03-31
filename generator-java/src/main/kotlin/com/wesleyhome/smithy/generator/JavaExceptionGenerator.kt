@@ -91,7 +91,7 @@ class JavaExceptionGenerator(
         typeBuilder.addMethod(dtoConstructor.build())
         codegenContext?.let { ctx ->
             ctx.integrations.forEach { integration ->
-                integration.onShapeGenerated(ctx, shape, typeBuilder)
+	            (integration as? JavaPoetCodegenIntegration)?.onShapeGenerated(ctx, shape, typeBuilder)
             }
         }
 
@@ -114,7 +114,12 @@ class JavaExceptionGenerator(
         val messageParam = ParameterSpec.builder(String::class.java, "message")
         codegenContext?.let { ctx ->
             ctx.integrations.forEach { integration ->
-                integration.onExceptionDtoParameterGenerated(ctx, shape, "message", messageParam)
+	            (integration as? JavaPoetCodegenIntegration)?.onExceptionDtoParameterGenerated(
+		            ctx,
+		            shape,
+		            "message",
+		            messageParam
+	            )
             }
         }
         recordParameters.add(messageParam.build())
@@ -127,7 +132,12 @@ class JavaExceptionGenerator(
             val paramBuilder = ParameterSpec.builder(typeName, fieldName)
             codegenContext?.let { ctx ->
                 ctx.integrations.forEach { integration ->
-                    integration.onExceptionDtoParameterGenerated(ctx, shape, member.memberName, paramBuilder)
+	                (integration as? JavaPoetCodegenIntegration)?.onExceptionDtoParameterGenerated(
+		                ctx,
+		                shape,
+		                member.memberName,
+		                paramBuilder
+	                )
                 }
             }
             recordParameters.add(paramBuilder.build())

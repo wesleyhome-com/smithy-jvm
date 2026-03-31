@@ -80,7 +80,11 @@ class JavaEnumGenerator(
         val fallbackBuilder = TypeSpec.anonymousClassBuilder(fallbackValueStr, *fallbackValueArg)
         codegenContext?.let { ctx ->
             ctx.integrations.forEach { integration ->
-                integration.onEnumUnknownConstantGenerated(ctx, shape, fallbackBuilder)
+	            (integration as? JavaPoetCodegenIntegration)?.onEnumUnknownConstantGenerated(
+		            ctx,
+		            shape,
+		            fallbackBuilder
+	            )
             }
         }
         typeBuilder.addEnumConstant("UNKNOWN_TO_SDK_VERSION", fallbackBuilder.build())
@@ -102,7 +106,7 @@ class JavaEnumGenerator(
             .addStatement("return value")
         codegenContext?.let { ctx ->
             ctx.integrations.forEach { integration ->
-                integration.onEnumValueGetterGenerated(ctx, shape, getterBuilder)
+	            (integration as? JavaPoetCodegenIntegration)?.onEnumValueGetterGenerated(ctx, shape, getterBuilder)
             }
         }
 
@@ -136,14 +140,14 @@ class JavaEnumGenerator(
             .addStatement("return UNKNOWN_TO_SDK_VERSION")
         codegenContext?.let { ctx ->
             ctx.integrations.forEach { integration ->
-                integration.onEnumFromValueGenerated(ctx, shape, creatorBuilder)
+	            (integration as? JavaPoetCodegenIntegration)?.onEnumFromValueGenerated(ctx, shape, creatorBuilder)
             }
         }
 
         typeBuilder.addMethod(creatorBuilder.build())
         codegenContext?.let { ctx ->
             ctx.integrations.forEach { integration ->
-                integration.onShapeGenerated(ctx, shape, typeBuilder)
+	            (integration as? JavaPoetCodegenIntegration)?.onShapeGenerated(ctx, shape, typeBuilder)
             }
         }
 

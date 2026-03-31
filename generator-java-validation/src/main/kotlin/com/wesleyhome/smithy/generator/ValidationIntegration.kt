@@ -13,7 +13,7 @@ import software.amazon.smithy.model.traits.PatternTrait
 import software.amazon.smithy.model.traits.RangeTrait
 import software.amazon.smithy.model.traits.RequiredTrait
 
-class ValidationIntegration : JavaCodegenIntegration {
+class ValidationIntegration : JavaCodegenIntegration, JavaPoetCodegenIntegration {
 	private val jakartaValid = ClassName.get("jakarta.validation", "Valid")
 	private val constraints = "jakarta.validation.constraints"
 
