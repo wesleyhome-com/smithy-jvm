@@ -8,27 +8,27 @@ class ClientIntegration : JavaCodegenIntegration {
     override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
         return listOf(
             GeneratorContribution(
-                family = JavaGeneratorFamilies.CLIENT_STRUCTURES,
+                family = GeneratorFamilies.CLIENT_STRUCTURES,
 	            generators = listOf(JavaStructureGenerator(context))
             ),
             GeneratorContribution(
-                family = JavaGeneratorFamilies.CLIENT_EXCEPTIONS,
+                family = GeneratorFamilies.CLIENT_EXCEPTIONS,
                 generators = listOf(JavaExceptionGenerator(context))
             ),
             GeneratorContribution(
-                family = JavaGeneratorFamilies.CLIENT_ENUMS,
+                family = GeneratorFamilies.CLIENT_ENUMS,
                 generators = listOf(JavaEnumGenerator(context))
             ),
             GeneratorContribution(
-                family = JavaGeneratorFamilies.CLIENT_UNIONS,
+                family = GeneratorFamilies.CLIENT_UNIONS,
                 generators = listOf(JavaUnionGenerator(context))
             ),
             GeneratorContribution(
-                family = JavaGeneratorFamilies.CLIENT_CORE,
+                family = GeneratorFamilies.CLIENT_CORE,
                 generators = listOf(JavaClientCoreAbstractionsGenerator())
             ),
             GeneratorContribution(
-                family = JavaGeneratorFamilies.CLIENT_SERVICE,
+                family = GeneratorFamilies.CLIENT_SERVICE,
                 generators = listOf(JavaClientGenerator())
             )
         )

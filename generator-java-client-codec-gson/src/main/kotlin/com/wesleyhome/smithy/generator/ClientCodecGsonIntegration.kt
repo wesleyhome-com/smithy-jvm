@@ -7,7 +7,7 @@ class ClientCodecGsonIntegration : JavaCodegenIntegration {
 
 	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> = listOf(
 		GeneratorContribution(
-			family = JavaGeneratorFamilies.CLIENT_PROTOCOL_CODEC_GSON,
+			family = GeneratorFamilies.CLIENT_PROTOCOL_CODEC_GSON,
 			generators = listOf(JavaClientGsonCodecGenerator())
 		)
 	)

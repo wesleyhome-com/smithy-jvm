@@ -61,12 +61,12 @@ class JavaCodegenRunnerConflictTest {
 				integrations = listOf(
 					ClientFamilyIntegration(
 						name = "client-jdk-a",
-						family = JavaGeneratorFamilies.CLIENT_HTTP_TRANSPORT_JDK,
+						family = GeneratorFamilies.CLIENT_HTTP_TRANSPORT_JDK,
 						priority = 10
 					),
 					ClientFamilyIntegration(
 						name = "client-jdk-b",
-						family = JavaGeneratorFamilies.CLIENT_HTTP_TRANSPORT_JDK,
+						family = GeneratorFamilies.CLIENT_HTTP_TRANSPORT_JDK,
 						priority = 10
 					)
 				)
@@ -75,7 +75,7 @@ class JavaCodegenRunnerConflictTest {
 
 		assertThat(
 			ex.message ?: ""
-		).contains("Multiple integrations claim family '${JavaGeneratorFamilies.CLIENT_HTTP_TRANSPORT_JDK}'")
+		).contains("Multiple integrations claim family '${GeneratorFamilies.CLIENT_HTTP_TRANSPORT_JDK}'")
 	}
 
 	@Test
@@ -88,13 +88,13 @@ class JavaCodegenRunnerConflictTest {
 			integrations = listOf(
 				ClientFamilyIntegration(
 					name = "codec-low",
-					family = JavaGeneratorFamilies.CLIENT_PROTOCOL_CODEC_GSON,
+					family = GeneratorFamilies.CLIENT_PROTOCOL_CODEC_GSON,
 					priority = 3,
 					marker = "low"
 				),
 				ClientFamilyIntegration(
 					name = "codec-high",
-					family = JavaGeneratorFamilies.CLIENT_PROTOCOL_CODEC_GSON,
+					family = GeneratorFamilies.CLIENT_PROTOCOL_CODEC_GSON,
 					priority = 9,
 					marker = "high"
 				)

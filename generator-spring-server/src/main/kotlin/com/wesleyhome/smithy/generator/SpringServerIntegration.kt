@@ -8,35 +8,35 @@ class SpringServerIntegration : JavaCodegenIntegration {
 	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
         return listOf(
 	        GeneratorContribution(
-                family = JavaGeneratorFamilies.SERVER_STRUCTURES,
+		        family = GeneratorFamilies.SERVER_STRUCTURES,
                 generators = listOf(JavaStructureGenerator(context))
             ),
 	        GeneratorContribution(
-                family = JavaGeneratorFamilies.SERVER_EXCEPTIONS,
+		        family = GeneratorFamilies.SERVER_EXCEPTIONS,
                 generators = listOf(JavaExceptionGenerator(context))
             ),
 	        GeneratorContribution(
-                family = JavaGeneratorFamilies.SERVER_ENUMS,
+		        family = GeneratorFamilies.SERVER_ENUMS,
                 generators = listOf(JavaEnumGenerator(context))
             ),
 	        GeneratorContribution(
-                family = JavaGeneratorFamilies.SERVER_UNIONS,
+		        family = GeneratorFamilies.SERVER_UNIONS,
                 generators = listOf(JavaUnionGenerator(context))
             ),
 	        GeneratorContribution(
-                family = JavaGeneratorFamilies.SERVER_API,
+		        family = GeneratorFamilies.SERVER_API,
                 generators = listOf(JavaSpringOperationApiGenerator())
             ),
 	        GeneratorContribution(
-                family = JavaGeneratorFamilies.SERVER_CONTROLLER,
+		        family = GeneratorFamilies.SERVER_CONTROLLER,
                 generators = listOf(JavaSpringControllerGenerator())
             ),
 	        GeneratorContribution(
-                family = JavaGeneratorFamilies.SERVER_EXCEPTION_HANDLER,
+		        family = GeneratorFamilies.SERVER_EXCEPTION_HANDLER,
                 generators = listOf(JavaSpringGlobalExceptionHandlerGenerator())
             ),
 	        GeneratorContribution(
-                family = JavaGeneratorFamilies.SERVER_FALLBACK_CONFIG,
+		        family = GeneratorFamilies.SERVER_FALLBACK_CONFIG,
                 generators = listOf(JavaSpringFallbackConfigGenerator())
             )
         )

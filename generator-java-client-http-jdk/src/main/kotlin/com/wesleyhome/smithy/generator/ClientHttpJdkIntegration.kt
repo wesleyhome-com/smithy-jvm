@@ -7,7 +7,7 @@ class ClientHttpJdkIntegration : JavaCodegenIntegration {
 
 	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> = listOf(
 		GeneratorContribution(
-			family = JavaGeneratorFamilies.CLIENT_HTTP_TRANSPORT_JDK,
+			family = GeneratorFamilies.CLIENT_HTTP_TRANSPORT_JDK,
 			generators = listOf(JavaClientJdkHttpTransportGenerator())
 		)
 	)

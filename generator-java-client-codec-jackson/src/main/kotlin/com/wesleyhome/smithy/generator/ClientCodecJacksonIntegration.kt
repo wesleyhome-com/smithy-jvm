@@ -7,7 +7,7 @@ class ClientCodecJacksonIntegration : JavaCodegenIntegration {
 
 	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> = listOf(
 		GeneratorContribution(
-			family = JavaGeneratorFamilies.CLIENT_PROTOCOL_CODEC_JACKSON,
+			family = GeneratorFamilies.CLIENT_PROTOCOL_CODEC_JACKSON,
 			generators = listOf(JavaClientJacksonCodecGenerator())
 		)
 	)
