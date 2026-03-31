@@ -3,7 +3,7 @@ package com.wesleyhome.smithy.generator
 class ClientIntegration : JavaCodegenIntegration {
     override fun name(): String = "client-integration"
 
-    override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.CLIENT
+    override fun supports(target: CodegenTarget): Boolean = target == CodegenTarget.CLIENT
 
     override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
         return listOf(

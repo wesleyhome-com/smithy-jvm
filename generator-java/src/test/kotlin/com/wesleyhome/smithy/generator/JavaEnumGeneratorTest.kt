@@ -181,7 +181,7 @@ class JavaEnumGeneratorTest {
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,
-			target = JavaCodegenTarget.MODEL
+			target = CodegenTarget.MODEL
 		)
 	}
 

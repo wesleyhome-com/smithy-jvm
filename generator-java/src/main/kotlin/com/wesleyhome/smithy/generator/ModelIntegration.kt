@@ -3,7 +3,7 @@ package com.wesleyhome.smithy.generator
 class ModelIntegration : JavaCodegenIntegration {
     override fun name(): String = "model-integration"
 
-    override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.MODEL
+	override fun supports(target: CodegenTarget): Boolean = target == CodegenTarget.MODEL
 
 	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
         return listOf(

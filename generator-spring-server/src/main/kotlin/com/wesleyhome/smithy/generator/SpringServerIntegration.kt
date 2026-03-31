@@ -3,7 +3,7 @@ package com.wesleyhome.smithy.generator
 class SpringServerIntegration : JavaCodegenIntegration {
     override fun name(): String = "spring-server-integration"
 
-    override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.SERVER
+	override fun supports(target: CodegenTarget): Boolean = target == CodegenTarget.SERVER
 
 	override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
         return listOf(

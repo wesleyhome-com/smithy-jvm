@@ -42,7 +42,7 @@ class JavaCodegenRunnerConflictTest {
 		val ex = assertThrows<IllegalStateException> {
 			JavaCodegenRunner.run(
 				context = context,
-				target = JavaCodegenTarget.MODEL,
+				target = CodegenTarget.MODEL,
 				integrations = listOf(ConflictIntegrationA(), ConflictIntegrationB())
 			)
 		}
@@ -57,7 +57,7 @@ class JavaCodegenRunnerConflictTest {
 		val ex = assertThrows<IllegalStateException> {
 			JavaCodegenRunner.run(
 				context = context,
-				target = JavaCodegenTarget.CLIENT,
+				target = CodegenTarget.CLIENT,
 				integrations = listOf(
 					ClientFamilyIntegration(
 						name = "client-jdk-a",
@@ -84,7 +84,7 @@ class JavaCodegenRunnerConflictTest {
 
 		val result = JavaCodegenRunner.run(
 			context = context,
-			target = JavaCodegenTarget.CLIENT,
+			target = CodegenTarget.CLIENT,
 			integrations = listOf(
 				ClientFamilyIntegration(
 					name = "codec-low",
@@ -135,7 +135,7 @@ class JavaCodegenRunnerConflictTest {
 
 		override fun priority(): Byte = 5
 
-		override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.MODEL
+		override fun supports(target: CodegenTarget): Boolean = target == CodegenTarget.MODEL
 
 		override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
 			return listOf(
@@ -152,7 +152,7 @@ class JavaCodegenRunnerConflictTest {
 
 		override fun priority(): Byte = 5
 
-		override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.MODEL
+		override fun supports(target: CodegenTarget): Boolean = target == CodegenTarget.MODEL
 
 		override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
 			return listOf(
@@ -196,7 +196,7 @@ class JavaCodegenRunnerConflictTest {
 
 		override fun priority(): Byte = priority
 
-		override fun supports(target: JavaCodegenTarget): Boolean = target == JavaCodegenTarget.CLIENT
+		override fun supports(target: CodegenTarget): Boolean = target == CodegenTarget.CLIENT
 
 		override fun generatorContributions(context: JavaCodegenContext): List<GeneratorContribution> {
 			return listOf(

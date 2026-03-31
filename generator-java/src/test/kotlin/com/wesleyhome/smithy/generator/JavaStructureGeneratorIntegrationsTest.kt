@@ -55,7 +55,7 @@ class JavaStructureGeneratorIntegrationsTest {
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,
-			target = JavaCodegenTarget.MODEL
+			target = CodegenTarget.MODEL
 		)
 
 		val code = JavaStructureGenerator(context).generate(shape, model, symbolProvider).files.first().content
@@ -101,7 +101,7 @@ class JavaStructureGeneratorIntegrationsTest {
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,
-			target = JavaCodegenTarget.MODEL
+			target = CodegenTarget.MODEL
 		)
 
 		val code = JavaStructureGenerator(context).generate(shape, model, symbolProvider).files.first().content

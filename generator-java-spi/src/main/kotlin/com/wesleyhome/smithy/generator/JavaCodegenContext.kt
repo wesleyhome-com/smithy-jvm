@@ -10,7 +10,7 @@ data class JavaCodegenContext(
 	val serviceShape: ServiceShape,
 	val symbolProvider: SymbolProvider,
 	val integrations: List<JavaCodegenIntegration>,
-	val target: JavaCodegenTarget
+	val target: CodegenTarget
 ) {
 	val javaPoetIntegrations: List<JavaPoetCodegenIntegration>
 		get() = integrations.filterIsInstance<JavaPoetCodegenIntegration>()

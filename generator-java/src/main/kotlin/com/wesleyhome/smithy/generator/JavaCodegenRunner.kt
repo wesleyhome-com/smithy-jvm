@@ -36,7 +36,7 @@ object JavaCodegenRunner {
 
     fun run(
         context: PluginContext,
-        target: JavaCodegenTarget,
+        target: CodegenTarget,
         integrations: List<JavaCodegenIntegration> = emptyList()
     ): Result {
         val settings = JavaSettings.from(context.settings)

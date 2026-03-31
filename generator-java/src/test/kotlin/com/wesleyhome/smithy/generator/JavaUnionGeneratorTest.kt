@@ -108,7 +108,7 @@ class JavaUnionGeneratorTest {
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,
-			target = JavaCodegenTarget.MODEL
+			target = CodegenTarget.MODEL
 		)
 	}
 

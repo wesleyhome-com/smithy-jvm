@@ -18,7 +18,7 @@ interface JavaCodegenIntegration {
 
     fun priority(): Byte = 0
 
-    fun supports(target: JavaCodegenTarget): Boolean = true
+    fun supports(target: CodegenTarget): Boolean = true
 
     fun preprocessModel(context: JavaCodegenContext): Model = context.model
 
