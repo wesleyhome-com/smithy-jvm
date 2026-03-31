@@ -30,6 +30,8 @@ include(
 	":generator-java-client-codec-jackson",
 	":generator-java-client-codec-gson",
 	":generator-java",
+	":generator-java-model",
+	":generator-java-client",
 	":gradle-plugin",
 	":maven-plugin",
 	":test-projects:gradle-project"

@@ -9,10 +9,6 @@ dependencies {
 	implementation(project(":generator-java"))
 	implementation(project(":generator-java-jackson"))
 	implementation(project(":generator-java-validation"))
-	implementation(project(":generator-java-client-http-jdk"))
-	implementation(project(":generator-java-client-http-okhttp"))
-	implementation(project(":generator-java-client-codec-jackson"))
-	implementation(project(":generator-java-client-codec-gson"))
 
 	// Core Smithy build and codegen abstractions
 	implementation(libs.smithy.build)

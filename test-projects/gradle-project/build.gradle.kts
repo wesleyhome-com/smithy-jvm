@@ -45,8 +45,16 @@ dependencies {
     // OkHttp for client projection
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    // Smithy model dependencies
+    // Smithy codegen modules (explicit, no bundle module)
+    smithyBuild(project(":generator-java-model"))
+    smithyBuild(project(":generator-java-client"))
     smithyBuild(project(":generator-spring-server"))
+    smithyBuild(project(":generator-java-jackson"))
+    smithyBuild(project(":generator-java-validation"))
+    smithyBuild(project(":generator-java-client-http-jdk"))
+    smithyBuild(project(":generator-java-client-http-okhttp"))
+    smithyBuild(project(":generator-java-client-codec-jackson"))
+    smithyBuild(project(":generator-java-client-codec-gson"))
 
     // JOOQ Code Gen dependencies
     jooqCodegen("org.jooq:jooq-meta-extensions:3.20.11")
