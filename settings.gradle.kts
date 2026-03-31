@@ -34,7 +34,7 @@ include(
 	":generator-java-client",
 	":gradle-plugin",
 	":maven-plugin",
-	":test-projects:gradle-project"
+	":sample-library-service"
 )
 
 project(":generator-java-spring-server").projectDir = file("generator-java/spring-server")
@@ -48,5 +48,6 @@ project(":generator-java-client-codec-jackson").projectDir = file("generator-jav
 project(":generator-java-client-codec-gson").projectDir = file("generator-java/client-codec-gson")
 project(":generator-java-model").projectDir = file("generator-java/model")
 project(":generator-java-client").projectDir = file("generator-java/client")
+project(":sample-library-service").projectDir = file("examples/sample-library-service")
 
-rootProject.name = "smithy-to-spring-boot"
+rootProject.name = "smithy-jvm"
