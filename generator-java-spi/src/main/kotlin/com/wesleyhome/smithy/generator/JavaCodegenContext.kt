@@ -6,7 +6,7 @@ import software.amazon.smithy.model.shapes.ServiceShape
 
 data class JavaCodegenContext(
 	val model: Model,
-	val settings: JavaSettings,
+	val settings: CodegenSettings,
 	val serviceShape: ServiceShape,
 	val symbolProvider: SymbolProvider,
 	val integrations: List<JavaCodegenIntegration>,

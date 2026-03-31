@@ -39,7 +39,7 @@ object JavaCodegenRunner {
         target: CodegenTarget,
         integrations: List<JavaCodegenIntegration> = emptyList()
     ): Result {
-        val settings = JavaSettings.from(context.settings)
+        val settings = CodegenSettings.from(context.settings)
 
         // 1. Resolve Target Service
         val serviceString = settings.requireString("service")

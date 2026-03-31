@@ -177,7 +177,7 @@ class JavaEnumGeneratorTest {
 		val settings = Node.objectNodeBuilder().build()
 		return JavaCodegenContext(
 			model = model,
-			settings = JavaSettings.from(settings),
+			settings = CodegenSettings.from(settings),
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,

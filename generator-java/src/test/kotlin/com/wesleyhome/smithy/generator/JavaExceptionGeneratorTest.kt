@@ -92,7 +92,7 @@ class JavaExceptionGeneratorTest {
 		val integrations = listOf<JavaCodegenIntegration>(JacksonIntegration())
 		return JavaCodegenContext(
 			model = model,
-			settings = JavaSettings.from(settings),
+			settings = CodegenSettings.from(settings),
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,

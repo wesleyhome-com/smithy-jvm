@@ -5,7 +5,7 @@ import software.amazon.smithy.model.node.ObjectNode
 /**
  * Typed access wrapper for Smithy plugin settings.
  */
-data class JavaSettings(private val node: ObjectNode) {
+data class CodegenSettings(private val node: ObjectNode) {
 
 	fun requireString(name: String): String {
 		return node.getStringMember(name).orElseThrow {
@@ -16,6 +16,6 @@ data class JavaSettings(private val node: ObjectNode) {
 	fun getString(name: String): String? = node.getStringMember(name).map { it.value }.orElse(null)
 
 	companion object {
-		fun from(node: ObjectNode): JavaSettings = JavaSettings(node)
+		fun from(node: ObjectNode): CodegenSettings = CodegenSettings(node)
 	}
 }

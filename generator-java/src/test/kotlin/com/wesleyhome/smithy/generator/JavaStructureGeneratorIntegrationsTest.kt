@@ -51,7 +51,7 @@ class JavaStructureGeneratorIntegrationsTest {
 		val integrations = listOf<JavaCodegenIntegration>(ValidationIntegration(), JacksonIntegration())
 		val context = JavaCodegenContext(
 			model = model,
-			settings = JavaSettings.from(Node.objectNodeBuilder().build()),
+			settings = CodegenSettings.from(Node.objectNodeBuilder().build()),
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,
@@ -97,7 +97,7 @@ class JavaStructureGeneratorIntegrationsTest {
 		val integrations = listOf<JavaCodegenIntegration>(LegacyLikeHooksIntegration())
 		val context = JavaCodegenContext(
 			model = model,
-			settings = JavaSettings.from(Node.objectNodeBuilder().build()),
+			settings = CodegenSettings.from(Node.objectNodeBuilder().build()),
 			serviceShape = serviceShape,
 			symbolProvider = symbolProvider,
 			integrations = integrations,
