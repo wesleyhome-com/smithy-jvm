@@ -32,8 +32,6 @@ include(
 	":generator-java-base",
 	":generator-java-model",
 	":generator-java-client",
-	":gradle-plugin",
-	":maven-plugin",
 	":sample-library-service"
 )
 
