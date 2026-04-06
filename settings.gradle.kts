@@ -32,7 +32,11 @@ include(
 	":generator-java-base",
 	":generator-java-model",
 	":generator-java-client",
-	":sample-library-service"
+	":sample-library-service",
+	":sample-library-client-bare",
+	":sample-library-client-gson-jdk",
+	":sample-library-client-jackson-jdk",
+	":sample-library-client-okhttp-jackson"
 )
 
 project(":generator-java-spring-server").projectDir = file("generator-java/spring-server")
@@ -47,5 +51,9 @@ project(":generator-java-client-codec-gson").projectDir = file("generator-java/c
 project(":generator-java-model").projectDir = file("generator-java/model")
 project(":generator-java-client").projectDir = file("generator-java/client")
 project(":sample-library-service").projectDir = file("examples/sample-library-service")
+project(":sample-library-client-bare").projectDir = file("examples/sample-library-client-bare")
+project(":sample-library-client-gson-jdk").projectDir = file("examples/sample-library-client-gson-jdk")
+project(":sample-library-client-jackson-jdk").projectDir = file("examples/sample-library-client-jackson-jdk")
+project(":sample-library-client-okhttp-jackson").projectDir = file("examples/sample-library-client-okhttp-jackson")
 
 rootProject.name = "smithy-jvm"

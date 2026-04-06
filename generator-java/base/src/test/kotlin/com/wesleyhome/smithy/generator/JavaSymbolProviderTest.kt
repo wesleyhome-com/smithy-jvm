@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.model.Model
+import software.amazon.smithy.model.shapes.ServiceShape
 import software.amazon.smithy.model.shapes.ShapeId
 import software.amazon.smithy.model.shapes.StringShape
 
@@ -101,5 +102,115 @@ class JavaSymbolProviderTest {
 
 		assertThat(symbol.name).isEqualTo("BigDecimal")
 		assertThat(symbol.namespace).isEqualTo("java.math")
+	}
+
+	@Test
+	fun `maps resource-bound operation and models to root domain package`() {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
+                ${'$'}version: "2"
+                namespace com.wesleyhome
+
+                service Library {
+                    version: "2024-01-01"
+                    resources: [Patron]
+                }
+
+                resource Patron {
+                    identifiers: { id: String }
+                    read: GetPatron
+                    resources: [Contact]
+                }
+
+                resource Contact {
+                    identifiers: { id: String }
+                    update: UpdateContact
+                }
+
+                @readonly
+                @http(method: "GET", uri: "/patrons/{id}")
+                operation GetPatron {
+                    input: GetPatronInput
+                    output: GetPatronOutput
+                }
+
+                @http(method: "PATCH", uri: "/patrons/{id}/contact")
+                operation UpdateContact {
+                    input: UpdateContactInput
+                    output: UpdateContactOutput
+                }
+
+                structure GetPatronInput {
+                    @required
+                    @httpLabel
+                    id: String
+                }
+
+                structure GetPatronOutput {
+                    id: String
+                    name: String
+                }
+
+                structure UpdateContactInput {
+                    @required
+                    @httpLabel
+                    id: String
+                    @required
+                    email: String
+                }
+
+                structure UpdateContactOutput { id: String }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
+
+		val service = model.expectShape(ShapeId.from("com.wesleyhome#Library"), ServiceShape::class.java)
+		val provider = JavaSymbolProvider(model, "com.wesleyhome.generated", serviceShape = service)
+
+		val updateContact = model.expectShape(ShapeId.from("com.wesleyhome#UpdateContact"))
+		val updateContactInput = model.expectShape(ShapeId.from("com.wesleyhome#UpdateContactInput"))
+
+		assertThat(provider.toSymbol(updateContact).namespace).isEqualTo("com.wesleyhome.generated.patron.api")
+		assertThat(provider.toSymbol(updateContactInput).namespace).isEqualTo("com.wesleyhome.generated.patron.model")
+	}
+
+	@Test
+	fun `maps unbound tagged operation to domain package via tag fallback`() {
+		val model = Model.assembler()
+			.addUnparsedModel(
+				"test.smithy", """
+                ${'$'}version: "2"
+                namespace com.wesleyhome
+
+                service Library {
+                    version: "2024-01-01"
+                    operations: [SearchCatalog]
+                }
+
+                @tags(["Catalog"])
+                operation SearchCatalog {
+                    input: SearchCatalogInput
+                    output: SearchCatalogOutput
+                }
+
+                @tags(["Catalog"])
+                structure SearchCatalogInput { query: String }
+
+                @tags(["Catalog"])
+                structure SearchCatalogOutput { count: Integer }
+            """.trimIndent()
+			)
+			.assemble()
+			.unwrap()
+
+		val service = model.expectShape(ShapeId.from("com.wesleyhome#Library"), ServiceShape::class.java)
+		val provider = JavaSymbolProvider(model, "com.wesleyhome.generated", serviceShape = service)
+
+		val op = model.expectShape(ShapeId.from("com.wesleyhome#SearchCatalog"))
+		val input = model.expectShape(ShapeId.from("com.wesleyhome#SearchCatalogInput"))
+		assertThat(provider.toSymbol(op).namespace).isEqualTo("com.wesleyhome.generated.catalog.api")
+		assertThat(provider.toSymbol(input).namespace).isEqualTo("com.wesleyhome.generated.catalog.model")
 	}
 }

@@ -1,13 +1,13 @@
 package com.wesleyhome.library.server;
 
-import com.wesleyhome.library.server.api.reservations.CancelReservationApi;
-import com.wesleyhome.library.server.api.reservations.ListReservationsApi;
-import com.wesleyhome.library.server.api.reservations.ReserveComputerApi;
 import com.wesleyhome.library.server.mapper.api.ReservationApiMapper;
-import com.wesleyhome.library.server.model.reservations.CancelReservationOutputDTO;
-import com.wesleyhome.library.server.model.reservations.ComputerReservationDetailsDTO;
-import com.wesleyhome.library.server.model.reservations.ListReservationsOutputDTO;
-import com.wesleyhome.library.server.model.reservations.ReserveComputerOutputDTO;
+import com.wesleyhome.library.server.reservations.api.CancelReservationApi;
+import com.wesleyhome.library.server.reservations.api.ListReservationsApi;
+import com.wesleyhome.library.server.reservations.api.ReserveComputerApi;
+import com.wesleyhome.library.server.reservations.model.CancelReservationOutputDTO;
+import com.wesleyhome.library.server.reservations.model.ComputerReservationDetailsDTO;
+import com.wesleyhome.library.server.reservations.model.ListReservationsOutputDTO;
+import com.wesleyhome.library.server.reservations.model.ReserveComputerOutputDTO;
 import com.wesleyhome.library.server.service.ReservationService;
 import org.springframework.stereotype.Service;
 

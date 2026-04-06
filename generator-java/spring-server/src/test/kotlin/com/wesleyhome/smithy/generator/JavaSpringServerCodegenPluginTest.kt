@@ -115,9 +115,9 @@ class JavaSpringServerCodegenPluginTest {
 		val plugin = JavaSpringServerCodegenPlugin()
 		plugin.execute(context)
 
-		// Check tagged locations
-		assertThat(manifest.hasFile("com/wesleyhome/generated/api/admin/AdminOpApi.java")).isTrue()
-		assertThat(manifest.hasFile("com/wesleyhome/generated/model/admin/AdminOpInputDTO.java")).isTrue()
-		assertThat(manifest.hasFile("com/wesleyhome/generated/controller/AdminController.java")).isTrue()
+		// Check domain-first locations
+		assertThat(manifest.hasFile("com/wesleyhome/generated/admin/api/AdminOpApi.java")).isTrue()
+		assertThat(manifest.hasFile("com/wesleyhome/generated/admin/model/AdminOpInputDTO.java")).isTrue()
+		assertThat(manifest.hasFile("com/wesleyhome/generated/admin/controller/AdminController.java")).isTrue()
 	}
 }

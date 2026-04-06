@@ -2,10 +2,10 @@ package com.wesleyhome.library.server.mapper.api;
 
 import com.wesleyhome.library.server.domain.MembershipStatus;
 import com.wesleyhome.library.server.domain.Patron;
-import com.wesleyhome.library.server.model.patron.GetPatronInfoOutputDTO;
-import com.wesleyhome.library.server.model.patron.MembershipStatusDTO;
-import com.wesleyhome.library.server.model.patron.PatronDTO;
-import com.wesleyhome.library.server.model.patron.UpdatePatronContactOutputDTO;
+import com.wesleyhome.library.server.patron.model.GetPatronInfoOutputDTO;
+import com.wesleyhome.library.server.patron.model.MembershipStatusDTO;
+import com.wesleyhome.library.server.patron.model.PatronDTO;
+import com.wesleyhome.library.server.patron.model.UpdatePatronContactOutputDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;

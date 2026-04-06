@@ -39,7 +39,7 @@ class JavaSpringControllerGeneratorTest {
 
 		val serviceId = ShapeId.from("com.wesleyhome#MyService")
 		val service = model.expectShape(serviceId, ServiceShape::class.java)
-		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated", serviceShape = service)
 
 		val generator = JavaSpringControllerGenerator()
 		val result = generator.generate(service, model, symbolProvider)
@@ -86,7 +86,7 @@ class JavaSpringControllerGeneratorTest {
 
 		val serviceId = ShapeId.from("com.wesleyhome#MyService")
 		val service = model.expectShape(serviceId, ServiceShape::class.java)
-		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated", serviceShape = service)
 
 		val generator = JavaSpringControllerGenerator()
 		val result = generator.generate(service, model, symbolProvider)
@@ -163,16 +163,16 @@ class JavaSpringControllerGeneratorTest {
 
 		val serviceId = ShapeId.from("com.wesleyhome#MyService")
 		val service = model.expectShape(serviceId, ServiceShape::class.java)
-		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated")
+		val symbolProvider = JavaSymbolProvider(model, "com.wesleyhome.generated", serviceShape = service)
 
 		val generator = JavaSpringControllerGenerator()
 		val result = generator.generate(service, model, symbolProvider)
 		val code = result.files.first().content
 
 		assertThat(code).contains("@RestController")
-		assertThat(code).contains("public class ResourceController")
+		assertThat(code).contains("public class MyController")
 		assertThat(code).contains("private final GetResourceApi getResourceApi;")
-		assertThat(code).contains("public ResourceController(GetResourceApi getResourceApi)")
+		assertThat(code).contains("public MyController(GetResourceApi getResourceApi)")
 		// Now returns ResponseEntity
 		assertThat(code).contains("GetResourceOutputDTO result = getResourceApi.getResource(id);")
 		assertThat(code).contains("return ResponseEntity.ok()")

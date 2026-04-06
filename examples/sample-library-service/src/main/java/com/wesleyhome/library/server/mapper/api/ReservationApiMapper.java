@@ -2,10 +2,10 @@ package com.wesleyhome.library.server.mapper.api;
 
 import com.wesleyhome.library.server.domain.Reservation;
 import com.wesleyhome.library.server.domain.ReservationStatus;
-import com.wesleyhome.library.server.model.reservations.ListReservationsOutputDTO;
-import com.wesleyhome.library.server.model.reservations.ReservationDTO;
-import com.wesleyhome.library.server.model.reservations.ReservationStatusDTO;
-import com.wesleyhome.library.server.model.reservations.ReserveComputerOutputDTO;
+import com.wesleyhome.library.server.reservations.model.ListReservationsOutputDTO;
+import com.wesleyhome.library.server.reservations.model.ReservationDTO;
+import com.wesleyhome.library.server.reservations.model.ReservationStatusDTO;
+import com.wesleyhome.library.server.reservations.model.ReserveComputerOutputDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;

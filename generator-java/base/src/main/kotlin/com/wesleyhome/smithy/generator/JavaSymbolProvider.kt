@@ -18,6 +18,8 @@ class JavaSymbolProvider(
 	private val dtoSuffix: String = "DTO",
 	private val serviceShape: ServiceShape? = null
 ) : SymbolProvider {
+	private val packageResolver: ResourcePackageResolver? =
+		serviceShape?.let { ResourcePackageResolver(model, it) }
 
 	override fun toSymbol(shape: Shape): Symbol {
 		val builder = Symbol.builder().putProperty("shape", shape)
@@ -27,7 +29,7 @@ class JavaSymbolProvider(
 			return toSymbol(target).toBuilder().putProperty("shape", shape).build()
 		}
 
-		val tagSuffix = getTagSuffix(shape)
+		val domainNamespacePrefix = domainNamespacePrefix(shape)
 		// Use service shape for safe renames if available
 		val shapeName = if (serviceShape != null) shape.id.getName(serviceShape) else shape.id.name
 		val capitalizedName = StringUtils.capitalize(shapeName)
@@ -71,17 +73,17 @@ class JavaSymbolProvider(
 				} else {
 					capitalizedName + dtoSuffix
 				}
-				builder.name(name).namespace("$basePackage.model$tagSuffix", ".")
+				builder.name(name).namespace("${domainNamespacePrefix}model", ".")
 			}
 
 			ShapeType.INT_ENUM -> {
 				val name = capitalizedName + dtoSuffix
-				builder.name(name).namespace("$basePackage.model$tagSuffix", ".")
+				builder.name(name).namespace("${domainNamespacePrefix}model", ".")
 			}
 
 			ShapeType.OPERATION -> {
 				val name = capitalizedName + "Api"
-				builder.name(name).namespace("$basePackage.api$tagSuffix", ".")
+				builder.name(name).namespace("${domainNamespacePrefix}api", ".")
 			}
 
 			ShapeType.SERVICE -> {
@@ -98,12 +100,15 @@ class JavaSymbolProvider(
 		return StringUtils.uncapitalize(member.memberName)
 	}
 
-	private fun getTagSuffix(shape: Shape): String {
+	private fun domainNamespacePrefix(shape: Shape): String {
+		val domainKey = packageResolver?.domainKeyForShape(shape) ?: fallbackTagDomainKey(shape)
+		return if (domainKey.isNullOrBlank()) "$basePackage." else "$basePackage.$domainKey."
+	}
+
+	private fun fallbackTagDomainKey(shape: Shape): String? {
 		return shape.getTrait(TagsTrait::class.java)
-			.map { tags ->
-				if (tags.values.isNotEmpty()) {
-					"." + tags.values[0].lowercase().replace(" ", "")
-				} else ""
-			}.orElse("")
+			.map { it.values.firstOrNull() }
+			.map { it?.lowercase()?.replace(Regex("[^a-z0-9_]"), "") }
+			.orElse(null)
 	}
 }

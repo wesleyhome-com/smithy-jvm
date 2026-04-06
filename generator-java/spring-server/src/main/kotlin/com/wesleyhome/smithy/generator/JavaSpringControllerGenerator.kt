@@ -14,7 +14,6 @@ import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.knowledge.TopDownIndex
 import software.amazon.smithy.model.shapes.OperationShape
 import software.amazon.smithy.model.shapes.ServiceShape
-import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.traits.DefaultTrait
 import software.amazon.smithy.model.traits.HttpHeaderTrait
@@ -22,14 +21,13 @@ import software.amazon.smithy.model.traits.HttpLabelTrait
 import software.amazon.smithy.model.traits.HttpQueryTrait
 import software.amazon.smithy.model.traits.HttpTrait
 import software.amazon.smithy.model.traits.RequiredTrait
-import software.amazon.smithy.model.traits.TagsTrait
 import software.amazon.smithy.model.validation.Severity
 import software.amazon.smithy.model.validation.ValidationEvent
 import software.amazon.smithy.utils.StringUtils
 import javax.lang.model.element.Modifier
 
 /**
- * Generates Spring Boot RestControllers for a Smithy ServiceShape, grouped by tags.
+ * Generates Spring Boot RestControllers for a Smithy ServiceShape, grouped by operation domain package.
  */
 class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
 	override val shapeType: Class<ServiceShape> = ServiceShape::class.java
@@ -51,17 +49,21 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
 		val topDownIndex = TopDownIndex.of(model)
 		val operations = topDownIndex.getContainedOperations(shape).toList()
 
-		// Group Operations by Tag for Controllers
-		val groupedOperations = operations.groupBy { getPrimaryTag(it) }
+		// Group operations by the domain inferred by symbol namespaces (e.g., "...patron.api").
+		val groupedOperations =
+			operations.groupBy { domainKeyForOperation(it, symbolProvider, serviceSymbol.namespace) }
 
-		for ((tag, ops) in groupedOperations) {
-			val controllerName = if (tag != null) {
-				"${StringUtils.capitalize(tag)}Controller"
+		for ((domainKey, ops) in groupedOperations) {
+			val controllerName = if (domainKey != null) {
+				domainControllerName(domainKey)
 			} else {
 				"${serviceSymbol.name}Controller"
 			}
-			// We assume controllers go into a .controller subpackage relative to the service
-			val controllerPackage = "${serviceSymbol.namespace}.controller"
+			val controllerPackage = if (domainKey != null) {
+				"${serviceSymbol.namespace}.$domainKey.controller"
+			} else {
+				"${serviceSymbol.namespace}.controller"
+			}
 
 			val (javaFile, events) = generateController(controllerName, controllerPackage, ops, model, symbolProvider)
 			generatedFiles.add(javaFile.toGeneratedFile())
@@ -261,7 +263,33 @@ class JavaSpringControllerGenerator : ShapeGenerator<ServiceShape> {
 		return Pair(JavaFile.builder(packageName, typeBuilder.build()).build(), validationEvents)
 	}
 
-	private fun getPrimaryTag(shape: Shape): String? {
-		return shape.getTrait(TagsTrait::class.java).map { it.values.firstOrNull() }.orElse(null)
+	private fun domainKeyForOperation(
+		operation: OperationShape,
+		symbolProvider: SymbolProvider,
+		basePackage: String
+	): String? {
+		val namespace = symbolProvider.toSymbol(operation).namespace
+		val defaultApiNamespace = "$basePackage.api"
+		if (namespace == defaultApiNamespace) {
+			return null
+		}
+
+		val expectedSuffix = ".api"
+		if (!namespace.endsWith(expectedSuffix)) {
+			return null
+		}
+
+		val prefix = "$basePackage."
+		if (!namespace.startsWith(prefix)) {
+			return null
+		}
+
+		val domainPart = namespace.removePrefix(prefix).removeSuffix(expectedSuffix).trim('.')
+		return domainPart.ifBlank { null }
+	}
+
+	private fun domainControllerName(domainKey: String): String {
+		val stem = domainKey.split(".").joinToString("") { StringUtils.capitalize(it) }
+		return "${stem}Controller"
 	}
 }

@@ -1,10 +1,10 @@
 package com.wesleyhome.library.server;
 
+import com.wesleyhome.library.client.okhttp.catalog.model.SearchCatalogInputDTO;
+import com.wesleyhome.library.client.okhttp.catalog.model.SearchCatalogOutputDTO;
 import com.wesleyhome.library.client.okhttp.client.JacksonCodec;
 import com.wesleyhome.library.client.okhttp.client.LibraryServiceClient;
 import com.wesleyhome.library.client.okhttp.client.OkHttpTransport;
-import com.wesleyhome.library.client.okhttp.model.catalog.SearchCatalogInputDTO;
-import com.wesleyhome.library.client.okhttp.model.catalog.SearchCatalogOutputDTO;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

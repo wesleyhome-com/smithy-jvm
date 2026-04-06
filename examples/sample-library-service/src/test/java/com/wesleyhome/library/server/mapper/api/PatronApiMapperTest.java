@@ -2,10 +2,10 @@ package com.wesleyhome.library.server.mapper.api;
 
 import com.wesleyhome.library.server.domain.MembershipStatus;
 import com.wesleyhome.library.server.domain.Patron;
-import com.wesleyhome.library.server.model.patron.ContactDetailsDTO;
-import com.wesleyhome.library.server.model.patron.GetPatronInfoOutputDTO;
-import com.wesleyhome.library.server.model.patron.MembershipStatusDTO;
-import com.wesleyhome.library.server.model.patron.PatronDTO;
+import com.wesleyhome.library.server.patron.model.ContactDetailsDTO;
+import com.wesleyhome.library.server.patron.model.GetPatronInfoOutputDTO;
+import com.wesleyhome.library.server.patron.model.MembershipStatusDTO;
+import com.wesleyhome.library.server.patron.model.PatronDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

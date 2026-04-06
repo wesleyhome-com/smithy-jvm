@@ -1,7 +1,7 @@
 package com.wesleyhome.library.server;
 
+import com.wesleyhome.library.server.circulation.controller.CirculationController;
 import com.wesleyhome.library.server.config.SpringDelegateFallbackConfiguration;
-import com.wesleyhome.library.server.controller.CirculationController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;

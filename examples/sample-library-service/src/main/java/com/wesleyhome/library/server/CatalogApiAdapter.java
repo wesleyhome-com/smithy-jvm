@@ -1,10 +1,10 @@
 package com.wesleyhome.library.server;
 
-import com.wesleyhome.library.server.api.catalog.AddMediaItemApi;
-import com.wesleyhome.library.server.api.catalog.GetMediaApi;
-import com.wesleyhome.library.server.api.catalog.SearchCatalogApi;
+import com.wesleyhome.library.server.catalog.api.AddMediaItemApi;
+import com.wesleyhome.library.server.catalog.api.GetMediaApi;
+import com.wesleyhome.library.server.catalog.api.SearchCatalogApi;
+import com.wesleyhome.library.server.catalog.model.*;
 import com.wesleyhome.library.server.mapper.api.CatalogApiMapper;
-import com.wesleyhome.library.server.model.catalog.*;
 import com.wesleyhome.library.server.service.MediaService;
 import org.springframework.stereotype.Service;
 

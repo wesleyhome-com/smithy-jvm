@@ -1,9 +1,9 @@
 package com.wesleyhome.library.server;
 
-import com.wesleyhome.library.server.api.circulation.CheckOutItemApi;
+import com.wesleyhome.library.server.circulation.api.CheckOutItemApi;
+import com.wesleyhome.library.server.circulation.model.CheckOutItemOutputDTO;
+import com.wesleyhome.library.server.circulation.model.CheckOutRequestDTO;
 import com.wesleyhome.library.server.mapper.api.CirculationApiMapper;
-import com.wesleyhome.library.server.model.circulation.CheckOutItemOutputDTO;
-import com.wesleyhome.library.server.model.circulation.CheckOutRequestDTO;
 import com.wesleyhome.library.server.service.CirculationService;
 import org.springframework.stereotype.Service;
 

@@ -1,0 +1,14 @@
+{
+  "version": "2.0",
+  "projections": {
+    "client": {
+      "plugins": {
+        "java-client": {
+          "service": "com.wesleyhome.library#LibraryService",
+          "package": "com.wesleyhome.library.client.okhttp",
+          "dtoSuffix": "DTO"
+        }
+      }
+    }
+  }
+}
