@@ -35,6 +35,7 @@ class JavaCodegenRunnerConflictTest {
 			.settings(
 				Node.objectNodeBuilder()
 					.withMember("service", "com.wesleyhome#TestService")
+					.withMember("package", "com.wesleyhome.generated")
 					.build()
 			)
 			.build()
@@ -125,6 +126,7 @@ class JavaCodegenRunnerConflictTest {
 			.settings(
 				Node.objectNodeBuilder()
 					.withMember("service", "com.wesleyhome#TestService")
+					.withMember("package", "com.wesleyhome.generated")
 					.build()
 			)
 			.build()

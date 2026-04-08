@@ -49,7 +49,7 @@ object JavaCodegenRunner {
         val transformedModel = ModelTransformer.create().createDedicatedInputAndOutput(context.model, "Input", "Output")
         val transformedService = transformedModel.expectShape(serviceId, ServiceShape::class.java)
 
-        val basePackage = settings.getString("package") ?: "com.wesleyhome.generated"
+	    val basePackage = settings.requireString("package")
         val dtoSuffix = settings.getString("dtoSuffix") ?: "DTO"
 
         val discoveredIntegrations = ServiceLoader.load(

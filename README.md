@@ -1,195 +1,274 @@
-# Smithy-to-Spring Boot Matrix Codegen
+# smithy-to-spring-boot
 
-A high-performance, multi-role Smithy Build Plugin that generates idiomatic Java (and soon Kotlin) code from Smithy
-models. This generator follows a **Matrix Architecture**, allowing you to generate strictly what you need—whether it's
-pure domain models, lightweight client SDKs, or full-featured Spring Boot servers.
+Code generators for Smithy models targeting:
 
-## The Matrix Architecture
+- `java-model`
+- `java-client`
+- `java-spring-server`
 
-| Role       | Plugin Name          | Target Use Case                        | Primary Dependencies            |
-|:-----------|:---------------------|:---------------------------------------|:--------------------------------|
-| **Model**  | `java-model`         | Pure domain types (POJOs/Records)      | None (or Jackson/GSON)          |
-| **Client** | `java-client`        | Lightweight, pluggable Service Clients | Pluggable (JDK, OkHttp)         |
-| **Server** | `java-spring-server` | Spring Boot 3/4 Controllers & APIs     | Spring Boot, Jakarta Validation |
+The project is currently **unreleased**. Documentation below reflects the current codebase only.
 
-## Key Features
+For contributor and maintainer workflow, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-- **Modern Java 17+**: Utilizes Java Records for DTOs and Union variants, and Sealed Interfaces for polymorphic types.
-- **Hybrid Granular Delegate Pattern**: The server generator enforces a strict separation between API transport (
-  Controllers) and business logic (Functional Interfaces).
-- **One Interface Per Operation**: Every Smithy operation generates its own functional interface. This allows for
-  extreme decoupling and makes testing/implementing specific actions a breeze.
-- **Safe Global Error Handling**: Generates a centralized `@ControllerAdvice` and custom exception classes with nested
-  `Data` DTOs and `toDto()` mapping to prevent leaking internal stack traces.
-- **Smithy 2.0 `@default` Support**: Automatically assigns default values at runtime using Spring's
-  `@RequestParam(defaultValue = "...")` and Record Compact Constructors.
-- **Robust Enums**: Full support for Smithy 2.0 `enum` and `intEnum` shapes, including `UNKNOWN_TO_SDK_VERSION`
-  fallbacks.
-- **Strict Tenet Alignment**:
-    - **Service Closure**: Only generates code for shapes reachable from your target service.
-    - **Renames**: Fully respects Smithy `service` renames.
-    - **Protocol Agnostic**: Automatically synthesizes dedicated operation inputs/outputs via `ModelTransformer`.
-- **Abstracted Client Design**: Generated clients use an **Interface + Builder** pattern with pluggable transport (
-  `HttpTransport`) and serialization (`ProtocolCodec`) layers.
-- **Deep Customization**: Client builders include `UnaryOperator` hooks to configure underlying library objects (e.g.,
-  `HttpClient.Builder`, `ObjectMapper`).
-- **Validation**: Maps Smithy constraints (`@length`, `@range`, `@pattern`) to Jakarta/Hibernate validation annotations.
-- **Rich Documentation**: Extracts Smithy `@documentation` traits and applies them as Javadocs across all generated
-  code.
-- **Tag-Driven Domain Grouping**: Uses the Smithy `@tags` trait to map your API domains into organized Java packages and
-  Spring Controllers.
+## What This Project Generates
 
-## Pluggable Integrations (SPI)
+This project generates Java source from a Smithy `service` closure with a plugin-per-target model:
 
-The generator now uses a classpath-discovered integration SPI.
+- `java-model` generates domain model code only.
+- `java-client` generates model code plus a transport/codec-pluggable client SDK.
+- `java-spring-server` generates model code plus Spring MVC API interfaces, controllers, stubs, fallback config, and
+  global exception handling.
 
-- Build third-party integrations against `generator-java-spi` only.
-- Register integrations using `META-INF/services/com.wesleyhome.smithy.generator.JavaCodegenIntegration`.
-- Integrations are filtered by `supports(target)` and ordered by `priority()`.
-- Generator contributions are grouped by family (for example `model:structures`, `client:service`).
-- Exactly one integration wins per family. If multiple integrations claim the same family at the same priority,
-  generation fails fast.
+All generators are driven by:
 
-Bundled integrations are split into dedicated modules:
+- service-closure generation (only shapes reachable from configured `service`)
+- dedicated operation input/output synthesis
+- resource-first package grouping (with `@tags` fallback for unbound operations)
+- integration modules discovered through Java `ServiceLoader`
 
-- `generator-java-jackson`
-- `generator-java-validation`
+## Architecture Summary
 
-## Known Limitations / Roadmap
+The generator runtime is split into:
 
-- **`@streaming` Trait**: Real-time streaming payloads (via `java.io.InputStream`, Reactive Streams, or Spring WebFlux)
-  are not currently supported, but are actively planned for a future release.
+- **Generator plugins** (`java-model`, `java-client`, `java-spring-server`)
+- **Base generators** (structures, exceptions, enums, unions, client/server emitters)
+- **Enhancement integrations** (Jackson, validation, client transport, client codec)
+- **SPI** (`JavaCodegenIntegration` / `JavaPoetCodegenIntegration`) for extension and overrides
 
----
+Integrations contribute generators by **family**. One winner per family is selected by priority. If multiple
+integrations claim the same family at the same priority, generation fails fast.
 
-## Tag-Driven Architecture
+## Plugin Settings (`smithy-build.json`)
 
-This generator uses the Smithy `@tags` trait to organize your generated codebase intelligently. By applying
-`@tags(["DomainName"])` to your operations and structures, you control the resulting Java packaging and Spring
-Controller layout.
+All three plugins support the same core settings:
 
-### 1. Controller Grouping
+| Setting     | Required | Default | Description                                                                                |
+|:------------|:---------|:--------|:-------------------------------------------------------------------------------------------|
+| `service`   | Yes      | none    | Smithy service shape id, for example `com.example#MyService`.                              |
+| `package`   | Yes      | none    | Base package for generated code.                                                           |
+| `dtoSuffix` | No       | `DTO`   | Suffix for generated structure and intEnum/enum model types (exceptions are not suffixed). |
 
-Operations sharing the same primary tag are bundled into a single Spring `@RestController`.
+Current code does **not** define other user-facing plugin settings.
 
-```smithy
-@tags(["Catalog"])
-operation SearchCatalog { ... }
+## Plugin Catalog
 
-@tags(["Catalog"])
-operation AddMediaItem { ... }
-```
+### `java-model` (target: MODEL)
 
-**Result:** Both API endpoints are mounted on `CatalogController.java`.
+Plugin id in `smithy-build.json`: `java-model`
 
-### 2. Sub-Packaging
+What it generates:
 
-Tags automatically drive the sub-packaging of your DTOs and API interfaces (e.g., `model.catalog`, `api.catalog`),
-keeping your `import` statements clean as your service scales.
+- Java records for Smithy structures (except `@error` structures)
+- Java runtime exceptions for Smithy `@error` structures, including nested `Data` DTO and `toDto()`
+- Java enums for `enum` and `intEnum`, including `UNKNOWN_TO_SDK_VERSION`
+- Java sealed interfaces for unions with nested variants and `Unknown`
 
----
+Model behavior highlights:
 
-## Configuration (`smithy-build.json`)
+- Smithy `@default` maps to record compact constructor default assignment.
+- Smithy `@documentation` maps to Javadoc.
+- Smithy `@deprecated` maps to `@Deprecated`.
+- Primitive/shape mapping includes `timestamp -> Instant`, `document -> String`, `bigInteger -> BigInteger`,
+  `bigDecimal -> BigDecimal`.
 
-Configure the plugins within your projections. All plugins require the `service` target.
+### `java-client` (target: CLIENT)
 
-### Example: Multi-Role Projection
+Plugin id in `smithy-build.json`: `java-client`
 
-```json
-{
-  "version": "2.0",
-  "projections": {
-    "client_sdk": {
-      "plugins": {
-        "java-client": {
-          "service": "com.wesleyhome#MyService",
-          "package": "com.wesleyhome.client",
-          "dtoSuffix": "DTO"
-        }
-      }
-    },
-    "server_impl": {
-      "plugins": {
-        "java-spring-server": {
-          "service": "com.wesleyhome#MyService",
-          "package": "com.wesleyhome.generated"
-        }
-      }
-    }
-  }
-}
-```
+What it generates:
 
-### Configuration Options
+- Everything from model generation for client target families
+- Core client abstractions in `...client` package:
+  - `HttpRequest`
+  - `HttpResponse`
+  - `HttpTransport`
+  - `ProtocolCodec`
+- Service client API and implementation:
+  - `<Service>Client` interface
+  - `Default<Service>Client` package-private implementation
+  - `Builder` interface and package-private builder implementation
 
-| Option                 | Default                    | Roles  | Description                                                                 |
-|:-----------------------|:---------------------------|:-------|:----------------------------------------------------------------------------|
-| `service`              | **Required**               | All    | The Shape ID of the service to generate (e.g., `com.wesleyhome#MyService`). |
-| `package`              | `com.wesleyhome.generated` | All    | The base Java package for generated code.                                   |
-| `dtoSuffix`            | `DTO`                      | All    | Suffix added to generated structures (except Exceptions).                   |
-| `serializationLibrary` | Deprecated                 | All    | Classpath composition now controls serialization integrations.              |
-| `httpClientLibrary`    | Deprecated                 | Client | Classpath composition now controls HTTP transport integrations.             |
+Client behavior highlights:
 
----
+- Operation methods generated from `@http` trait.
+- URI label substitution for `@httpLabel`.
+- Query string construction for `@httpQuery` members.
+- Header mapping for `@httpHeader` input members.
+- Output header extraction for `@httpHeader` output members.
+- Throws `IOException` for request/codec failures.
+- Requires transport and codec implementations to be configured on builder unless generated by integration modules.
 
-## Required Dependencies
+### `java-spring-server` (target: SERVER)
 
-### 1. Gradle Plugins
+Plugin id in `smithy-build.json`: `java-spring-server`
 
-Your `build.gradle.kts` must include the Spring Boot and Smithy Gradle plugins:
+What it generates:
+
+- Everything from model generation for server target families
+- API interfaces per operation: `...api/<Operation>Api`
+- Default 501 stubs: `...api.stub/<Operation>ApiStub`
+- Controllers grouped by resolved domain: `...<domain>.controller/*Controller`
+- Global exception handler: `...controller/GlobalExceptionHandler`
+- Auto-configuration fallback class: `...config/SpringDelegateFallbackConfiguration`
+- Spring Boot auto-config imports entry:
+  - `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
+
+Server behavior highlights:
+
+- Uses `TopDownIndex.getContainedOperations(service)` so resource-bound operations are included.
+- Controller methods map transport concerns (`@PathVariable`, `@RequestParam`, `@RequestHeader`, `@RequestBody`).
+- API interfaces are business-level signatures returning DTOs (not `ResponseEntity`).
+- Controllers adapt API return values into `ResponseEntity`.
+- If multiple payload members exist for a Spring controller input, generator emits validation error
+  `MultiplePayloadMembers`.
+
+## Integration Modules
+
+Integrations are classpath-driven. You add/remove behavior by including/removing integration modules from `smithyBuild`.
+
+### JavaPoet integrations
+
+| Module                      | Applies To                         | What It Adds                                                                                                                                       |
+|:----------------------------|:-----------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `generator-java-jackson`    | model/client/server model emitters | Jackson annotations on record members and exception DTO members, enum JSON creator/value/default markers, union `@JsonTypeInfo` / `@JsonSubTypes`. |
+| `generator-java-validation` | model/client/server model emitters | Jakarta/Hibernate validation annotations from Smithy constraints (`@required`, `@length`, `@range`, `@pattern`) plus nested `@Valid` propagation.  |
+
+### Client transport/codec generator integrations
+
+| Module                                | Applies To | Generates          |
+|:--------------------------------------|:-----------|:-------------------|
+| `generator-java-client-http-jdk`      | client     | `JdkHttpTransport` |
+| `generator-java-client-http-okhttp`   | client     | `OkHttpTransport`  |
+| `generator-java-client-codec-jackson` | client     | `JacksonCodec`     |
+| `generator-java-client-codec-gson`    | client     | `GsonCodec`        |
+
+If you do not include transport/codec integrations, client core interfaces are still generated, but you must provide
+your own `HttpTransport` and `ProtocolCodec` implementation at runtime.
+
+## Resource-First Packaging Rules
+
+Packaging is resolved with `ResourcePackageResolver`:
+
+1. For resource-bound operations, root resource domain key is authoritative.
+2. Nested resources collapse to root resource domain package.
+3. Shapes referenced by resource-bound operations are grouped into that domain.
+4. For unbound operations/shapes, `@tags` first value is used as fallback domain key.
+5. If no domain key resolves, generation falls back to base package (no domain segment).
+
+Example output pattern for domain `patron`:
+
+- `com.example.generated.patron.model`
+- `com.example.generated.patron.api`
+- `com.example.generated.patron.api.stub`
+- `com.example.generated.patron.controller`
+
+## Dependency Setup
+
+Because this project is not yet released, you currently consume generator modules from source checkout or local
+publishing.
+
+### 1. Apply Smithy Gradle plugin
 
 ```kotlin
 plugins {
-    // Spring Boot 3 or 4
-    id("org.springframework.boot") version "4.0.4"
-    id("io.spring.dependency-management") version "1.1.7"
-    
-    // Smithy Gradle Plugin
-    id("software.amazon.smithy.gradle.smithy-base") version "1.4.0"
     java
+    id("software.amazon.smithy.gradle.smithy-base") version "1.4.0"
 }
 ```
 
-### 2. Generator Dependency
+### 2. Add generator modules to `smithyBuild`
 
-You must register the generator in your `dependencies` block using the `smithyBuild` configuration:
+Choose modules based on target and integrations you want.
+
+Model only:
 
 ```kotlin
 dependencies {
-    // Replace with the actual coordinates once published
-    smithyBuild("com.wesleyhome.smithy:smithy-to-spring-boot:0.0.1")
+    smithyBuild(project(":generator-java-model"))
 }
 ```
 
-### 3. Runtime Dependencies
-
-**Note:** Both Spring Boot 3 and 4 require **Java 17+**.
-
-#### For `java-spring-server`
-
-##### Spring Boot 4
+Client, bare (no generated transport/codec implementation):
 
 ```kotlin
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webmvc") // WebMVC starter in SB4
+    smithyBuild(project(":generator-java-client"))
+}
+```
+
+Client, JDK transport + Jackson codec:
+
+```kotlin
+dependencies {
+    smithyBuild(project(":generator-java-client"))
+    smithyBuild(project(":generator-java-client-http-jdk"))
+    smithyBuild(project(":generator-java-client-codec-jackson"))
+}
+```
+
+Client, JDK transport + Gson codec:
+
+```kotlin
+dependencies {
+    smithyBuild(project(":generator-java-client"))
+    smithyBuild(project(":generator-java-client-http-jdk"))
+    smithyBuild(project(":generator-java-client-codec-gson"))
+}
+```
+
+Client, OkHttp transport + Jackson codec:
+
+```kotlin
+dependencies {
+    smithyBuild(project(":generator-java-client"))
+    smithyBuild(project(":generator-java-client-http-okhttp"))
+    smithyBuild(project(":generator-java-client-codec-jackson"))
+}
+```
+
+Spring server with Jackson + validation:
+
+```kotlin
+dependencies {
+    smithyBuild(project(":generator-java-spring-server"))
+    smithyBuild(project(":generator-java-jackson"))
+    smithyBuild(project(":generator-java-validation"))
+}
+```
+
+When released, replace `project(...)` with published coordinates for equivalent modules.
+
+### 3. Runtime dependencies (consumer app)
+
+Add runtime libraries that correspond to what your generated code uses.
+
+For Spring server generation:
+
+```kotlin
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    // Jackson is required for the Server role
     implementation("com.fasterxml.jackson.core:jackson-databind")
 }
 ```
 
-##### Spring Boot 3
+For client with JDK transport + Jackson codec:
 
 ```kotlin
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web") // Web starter in SB3
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    // Jackson is required for the Server role
     implementation("com.fasterxml.jackson.core:jackson-databind")
 }
 ```
 
-#### For `java-client` (with OkHttp & Jackson)
+For client with JDK transport + Gson codec:
+
+```kotlin
+dependencies {
+    implementation("com.google.code.gson:gson:2.12.1")
+}
+```
+
+For client with OkHttp transport + Jackson codec:
 
 ```kotlin
 dependencies {
@@ -198,122 +277,134 @@ dependencies {
 }
 ```
 
-#### For `java-client` (with GSON)
+## `smithy-build.json` Examples
 
-```kotlin
-dependencies {
-    implementation("com.google.code.gson:gson:2.12.1")
+### Model projection
+
+```json
+{
+  "version": "2.0",
+  "projections": {
+    "model_only": {
+      "plugins": {
+        "java-model": {
+          "service": "com.example#MyService",
+          "package": "com.example.generated.model",
+          "dtoSuffix": "DTO"
+        }
+      }
+    }
+  }
 }
 ```
 
----
+### Client projection
 
-## Project Structure (Generated Code)
+```json
+{
+  "version": "2.0",
+  "projections": {
+    "client": {
+      "plugins": {
+        "java-client": {
+          "service": "com.example#MyService",
+          "package": "com.example.generated.client",
+          "dtoSuffix": "DTO"
+        }
+      }
+    }
+  }
+}
+```
 
-The generator organizes code into a clean, role-based directory structure depending on which plugin you configure.
+### Spring server projection
 
-### Server Layout (`java-spring-server`)
+```json
+{
+  "version": "2.0",
+  "projections": {
+    "server": {
+      "plugins": {
+        "java-spring-server": {
+          "service": "com.example#MyService",
+          "package": "com.example.generated.server"
+        }
+      }
+    }
+  }
+}
+```
+
+## Generated Output Layout
+
+### `java-model`
 
 ```text
-basePackage/
-├── api/                  # Functional Interfaces for each operation (e.g., GetMediaApi.java)
-│   └── stub/             # Default 501 Not Implemented stubs (loaded via ConditionalOnMissingBean)
-├── controller/           # Spring RestControllers (grouped by tag, e.g., CatalogController.java)
-├── config/               # Spring AutoConfiguration for Fallback Stubs
-└── model/                # Pure Java DTOs, Enums, and Unions (sub-packaged by tag)
+<basePackage>/
+`-- [<domain>/]model/
+    |-- StructureDTO.java
+    |-- ErrorName.java
+    |-- EnumTypeDTO.java
+    `-- UnionTypeDTO.java
 ```
 
-### Client Layout (`java-client`)
+### `java-client`
 
 ```text
-basePackage/
-├── client/               # Abstracted transport/codec interfaces & specific configured adapters
-│   ├── HttpTransport.java
-│   ├── ProtocolCodec.java
-│   ├── JdkHttpTransport.java
-│   ├── JacksonCodec.java
-│   ├── LibraryServiceClient.java
-│   └── DefaultLibraryServiceClient.java
-└── model/                # Pure Java DTOs, Enums, and Unions (sub-packaged by tag)
+<basePackage>/
+|-- [<domain>/]model/...
+`-- client/
+    |-- HttpRequest.java
+    |-- HttpResponse.java
+    |-- HttpTransport.java
+    |-- ProtocolCodec.java
+    |-- <Service>Client.java
+    |-- Default<Service>Client.java
+    |-- Default<Service>ClientBuilder.java
+    |-- JdkHttpTransport.java         (if module included)
+    |-- OkHttpTransport.java          (if module included)
+    |-- JacksonCodec.java             (if module included)
+    `-- GsonCodec.java                (if module included)
 ```
 
-## How to use the Server Generation (The Delegate Pattern)
+### `java-spring-server`
 
-This plugin uses a **Hybrid Granular Delegate Pattern**. It enforces a strict separation between HTTP transport logic (
-Controllers) and your business logic (Adapters).
-
-### 1. The Generated API Interface
-
-For every operation in your Smithy model, we generate a single functional interface. Notice how it operates strictly on
-business domain objects (DTOs), completely abstracted from Spring's `ResponseEntity` or HTTP headers.
-
-```java
-// Generated by smithy-to-spring-boot
-package com.wesleyhome.generated.api.catalog;
-
-public interface SearchCatalogApi {
-    SearchCatalogOutputDTO searchCatalog(String query, MediaTypeDTO type, Integer page);
-}
+```text
+<basePackage>/
+|-- [<domain>/]model/...
+|-- [<domain>/]api/
+|   |-- <Operation>Api.java
+|   `-- stub/<Operation>ApiStub.java
+|-- [<domain>/]controller/
+|   `-- <Domain>Controller.java
+|-- controller/
+|   `-- GlobalExceptionHandler.java
+|-- config/
+|   `-- SpringDelegateFallbackConfiguration.java
+`-- META-INF/spring/
+    `-- org.springframework.boot.autoconfigure.AutoConfiguration.imports
 ```
 
-### 2. The Generated Controller
+## Extension SPI (Advanced Users)
 
-We also generate a Spring `@RestController` that handles all `@PathVariable`, `@RequestHeader`, and HTTP status code
-mappings. It automatically injects your implementations of the API interfaces.
+If you are building custom integrations:
 
-```java
-// Generated by smithy-to-spring-boot
-@RestController
-public class CatalogController {
-    private final SearchCatalogApi searchCatalogApi;
+- Implement `JavaCodegenIntegration` for lifecycle hooks and generator-family contributions.
+- Implement `JavaPoetCodegenIntegration` for JavaPoet-level declaration mutation hooks.
+- Register via `META-INF/services/com.wesleyhome.smithy.generator.JavaCodegenIntegration`.
+- Scope integrations by `supports(target)`.
+- Use `priority()` to override a family winner.
 
-    public CatalogController(SearchCatalogApi searchCatalogApi) {
-        this.searchCatalogApi = searchCatalogApi;
-    }
+Family constants live in `GeneratorFamilies` and define the override boundary.
 
-    @GetMapping("/catalog")
-    public ResponseEntity<SearchCatalogOutputDTO> searchCatalog(...) {
-        // Delegates to your implementation, then maps to ResponseEntity
-        SearchCatalogOutputDTO result = searchCatalogApi.searchCatalog(query, type, page);
-        return ResponseEntity.ok().body(result);
-    }
-}
-```
+## Examples In This Repository
 
-### 3. Your Implementation (The Adapter)
+See runnable examples:
 
-To implement the API, you simply create a standard Spring `@Service` or `@Component` that implements the generated
-interface. You can implement one interface per class, or group multiple related interfaces into a single adapter.
+- `examples/sample-library-service`
+- `examples/sample-library-client-bare`
+- `examples/sample-library-client-jackson-jdk`
+- `examples/sample-library-client-gson-jdk`
+- `examples/sample-library-client-okhttp-jackson`
 
-```java
-// Written by YOU
-package com.wesleyhome.library.adapter;
-
-import com.wesleyhome.generated.api.catalog.SearchCatalogApi;
-import org.springframework.stereotype.Service;
-
-@Service
-public class CatalogApiAdapter implements SearchCatalogApi {
-    
-    private final MyDatabaseService dbService;
-    
-    public CatalogApiAdapter(MyDatabaseService dbService) {
-        this.dbService = dbService;
-    }
-
-    @Override
-    public SearchCatalogOutputDTO searchCatalog(String query, MediaTypeDTO type, Integer page) {
-        // 1. Execute your pure business logic
-        List<MediaItemDTO> items = dbService.search(query, type, page);
-        
-        // 2. Return the pure DTO. The controller handles the HTTP 200 OK.
-        return new SearchCatalogOutputDTO(items, (long) items.size());
-    }
-}
-```
-
-If you add a new operation to your Smithy model but haven't implemented the interface yet, the system will automatically
-fall back to a generated stub that returns an HTTP `501 Not Implemented`, ensuring your application always compiles and
-runs safely.
-
----
+These examples are the reference for current, supported composition patterns.
