@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Group all non-major updates together",
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "matchPackageNames": [
+        "*"
+      ]
+    }
+  ]
+}
