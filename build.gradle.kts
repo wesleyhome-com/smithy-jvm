@@ -1,7 +1,6 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-	id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 	id("net.researchgate.release") version "3.1.0" apply false
 	id("org.jetbrains.dokka")
 	id("com.github.ben-manes.versions") version "0.53.0"
@@ -64,12 +63,6 @@ dokka {
 }
 
 repositories { mavenCentral() }
-
-nexusPublishing {
-	this.repositories {
-		sonatype()
-	}
-}
 
 fun isNonStable(version: String): Boolean {
 	val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }

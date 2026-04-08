@@ -8,8 +8,7 @@ plugins {
 	// Apply the Kotlin JVM plugin to add support for Kotlin in JVM projects.
 	kotlin("jvm")
 	`java-library`
-	`maven-publish`
-	signing
+	id("com.vanniktech.maven.publish")
 	id("org.jetbrains.dokka-javadoc")
 }
 
@@ -21,59 +20,37 @@ repositories {
 	mavenLocal()
 	mavenCentral()
 }
-val dokkaJavadocJar: Jar by tasks.register<Jar>("javadocJar") {
-	dependsOn(tasks.dokkaGenerateModuleJavadoc)
-	from(tasks.dokkaGenerateModuleJavadoc.flatMap { it.outputDirectory })
-	archiveClassifier.set("javadoc")
-}
 
 kotlin {
 	// Use a specific Java version to make it easier to work in different environments.
 	jvmToolchain(17)
 }
 
-publishing {
-	publications {
-		create<MavenPublication>("mavenJava") {
-			from(components["java"])
-			artifact(dokkaJavadocJar)
-			pom {
-				name.set("Smithy JVM")
-				description.set("Converts Smithy models into Spring Boot scaffolding, generating API interfaces, DTOs, and service boilerplate to speed up backend development.")
-				developers {
-					developer {
-						id = "justin"
-						name = "Justin Wesley"
-						roles = listOf("Developer")
-					}
-				}
-				scm {
-					connection = "scm:git:https://github.com/wesleyhome-com/smithy-jvm.git"
-					developerConnection = "scm:git:https://github.com/wesleyhome-com/smithy-jvm.git"
-					url = "https://github.com/wesleyhome-com/smithy-jvm"
-					tag = "HEAD"
-				}
-				licenses {
-					license {
-						name.set("The Apache License, Version 2.0")
-						url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-					}
-				}
+mavenPublishing {
+	publishToMavenCentral(automaticRelease = true)
+	signAllPublications()
+	pom {
+		name.set("Smithy JVM")
+		description.set("Converts Smithy models into Spring Boot scaffolding, generating API interfaces, DTOs, and service boilerplate to speed up backend development.")
+		url.set("https://github.com/wesleyhome-com/smithy-jvm")
+		developers {
+			developer {
+				id.set("justin")
+				name.set("Justin Wesley")
+			}
+		}
+		scm {
+			connection.set("scm:git:https://github.com/wesleyhome-com/smithy-jvm.git")
+			developerConnection.set("scm:git:https://github.com/wesleyhome-com/smithy-jvm.git")
+			url.set("https://github.com/wesleyhome-com/smithy-jvm")
+		}
+		licenses {
+			license {
+				name.set("The Apache License, Version 2.0")
+				url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
 			}
 		}
 	}
-}
-
-signing {
-	setRequired { !project.version.toString().endsWith("-SNAPSHOT") && !project.hasProperty("skipSigning") }
-	if (isOnCIServer()) {
-		val signingKey: String? by project
-		if ((signingKey?.length ?: 0) <= 0) {
-			throw RuntimeException("No Signing Key")
-		}
-		useInMemoryPgpKeys(signingKey, "")
-	}
-	sign(publishing.publications["mavenJava"])
 }
 
 tasks.withType<JavaCompile>() {
@@ -90,8 +67,6 @@ tasks.withType<Javadoc>() {
 		}
 	}
 }
-
-fun isOnCIServer() = System.getenv("CI") == "true"
 
 tasks.withType<Test>().configureEach {
 	// Configure all test Gradle tasks to use JUnitPlatform.
