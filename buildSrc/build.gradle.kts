@@ -5,11 +5,13 @@ plugins {
 	`kotlin-dsl`
 }
 
-kotlin {
-	jvmToolchain(17)
+repositories {
+	// Use the plugin portal to apply community plugins in convention plugins.
+	mavenCentral()
+	gradlePluginPortal()
 }
 
 dependencies {
-	// Add a dependency on the Kotlin Gradle plugin, so that convention plugins can apply it.
 	implementation(libs.kotlinGradlePlugin)
+	implementation(libs.dokka.gradle.plugin)
 }

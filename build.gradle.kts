@@ -1,3 +1,12 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+
+plugins {
+	id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+	id("net.researchgate.release") version "3.1.0"
+	id("org.jetbrains.dokka")
+	id("com.github.ben-manes.versions") version "0.53.0"
+}
+
 subprojects {
 	pluginManager.withPlugin("java") {
 		extensions.configure(JavaPluginExtension::class.java) {
@@ -15,5 +24,60 @@ subprojects {
 				}
 			}
 		}
+	}
+}
+
+release {
+	tagTemplate = "$name-$version"
+}
+
+dependencies {
+	dokka(project(":generator-core"))
+	dokka(project(":generator-java-base"))
+	dokka(project(":generator-java-client"))
+	dokka(project(":generator-java-client-codec-gson"))
+	dokka(project(":generator-java-client-codec-jackson"))
+	dokka(project(":generator-java-client-http-jdk"))
+	dokka(project(":generator-java-jackson"))
+	dokka(project(":generator-java-model"))
+	dokka(project(":generator-java-spi"))
+	dokka(project(":generator-java-spring-server"))
+	dokka(project(":generator-java-validation"))
+}
+
+dokka {
+	dokkaPublications {
+		html {
+			outputDirectory = projectDir.resolve("docs")
+			includes.from("README.md")
+		}
+	}
+}
+
+tasks.named("clean") {
+	doLast {
+		delete("build")
+		delete("docs")
+	}
+}
+
+repositories { mavenCentral() }
+
+nexusPublishing {
+	this.repositories {
+		sonatype()
+	}
+}
+
+fun isNonStable(version: String): Boolean {
+	val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
+	val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+	val isStable = stableKeyword || regex.matches(version)
+	return isStable.not()
+}
+
+tasks.withType<DependencyUpdatesTask>().configureEach {
+	rejectVersionIf {
+		isNonStable(candidate.version)
 	}
 }

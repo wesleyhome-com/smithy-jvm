@@ -7,7 +7,24 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
 	// Apply the Kotlin JVM plugin to add support for Kotlin in JVM projects.
 	kotlin("jvm")
+	`java-library`
 	`maven-publish`
+	signing
+	id("org.jetbrains.dokka-javadoc")
+}
+
+val versionString = providers.gradleProperty("version").get()
+version = versionString
+
+repositories {
+	// Use Maven Central for resolving dependencies.
+	mavenLocal()
+	mavenCentral()
+}
+val dokkaJavadocJar: Jar by tasks.register<Jar>("javadocJar") {
+	dependsOn(tasks.dokkaGenerateModuleJavadoc)
+	from(tasks.dokkaGenerateModuleJavadoc.flatMap { it.outputDirectory })
+	archiveClassifier.set("javadoc")
 }
 
 kotlin {
@@ -19,34 +36,62 @@ publishing {
 	publications {
 		create<MavenPublication>("mavenJava") {
 			from(components["java"])
+			artifact(dokkaJavadocJar)
 			pom {
-				name.set(project.name)
-				description.set("Smithy to Spring Boot Delegate Codegen")
+				name.set("Smithy JVM")
+				description.set("Converts Smithy models into Spring Boot scaffolding, generating API interfaces, DTOs, and service boilerplate to speed up backend development.")
 				developers {
 					developer {
-						id.set("justin.j.wesley")
-						name.set("Justin J. Wesley")
-						email.set("justin.j.wesley@gmail.com")
+						id = "justin"
+						name = "Justin Wesley"
+						roles = listOf("Developer")
 					}
 				}
-				// TODO: Add licenses and scm once a repository is set up
-				/*
+				scm {
+					connection = "scm:git:https://github.com/wesleyhome-com/smithy-jvm.git"
+					developerConnection = "scm:git:https://github.com/wesleyhome-com/smithy-jvm.git"
+					url = "https://github.com/wesleyhome-com/smithy-jvm"
+					tag = "HEAD"
+				}
 				licenses {
 					license {
 						name.set("The Apache License, Version 2.0")
 						url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
 					}
 				}
-				scm {
-					connection.set("scm:git:git://github.com/...")
-					developerConnection.set("scm:git:ssh://github.com/...")
-					url.set("https://github.com/...")
-				}
-				*/
 			}
 		}
 	}
 }
+
+signing {
+	setRequired { !project.version.toString().endsWith("-SNAPSHOT") && !project.hasProperty("skipSigning") }
+	if (isOnCIServer()) {
+		val signingKey: String? by project
+		if ((signingKey?.length ?: 0) <= 0) {
+			throw RuntimeException("No Signing Key")
+		}
+		useInMemoryPgpKeys(signingKey, "")
+	}
+	sign(publishing.publications["mavenJava"])
+}
+
+tasks.withType<JavaCompile>() {
+	options.encoding = "UTF-8"
+}
+
+tasks.withType<Javadoc>() {
+	options.encoding = "UTF-8"
+
+	setDestinationDir(file("$buildFile/javadoc"))
+	if (JavaVersion.current().isJava9Compatible) {
+		(options as StandardJavadocDocletOptions).apply {
+			addBooleanOption("html5", true)
+		}
+	}
+}
+
+fun isOnCIServer() = System.getenv("CI") == "true"
 
 tasks.withType<Test>().configureEach {
 	// Configure all test Gradle tasks to use JUnitPlatform.

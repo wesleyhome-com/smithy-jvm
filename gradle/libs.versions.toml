@@ -4,6 +4,7 @@
 
 [versions]
 kotlin = "2.3.20"
+dokka-gradle-plugin = "2.1.0"
 
 # Project specific dependencies
 smithy = "1.68.0"
@@ -13,6 +14,7 @@ assertk = "0.28.1"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+dokka-gradle-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka-gradle-plugin" }
 
 # Smithy
 smithy-build = { module = "software.amazon.smithy:smithy-build", version.ref = "smithy" }
