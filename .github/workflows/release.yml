@@ -53,5 +53,5 @@ jobs:
           ./gradlew release
           -Prelease.useAutomaticVersion=true
           -Prelease.newVersion=${{ inputs.next_version }}
-          -Prelease.buildTasks="build dokkaGenerate publishToMavenCentral"
+          -Prelease.buildTasks="build dokkaGenerate publishGeneratorsToMavenCentral"
           --no-daemon

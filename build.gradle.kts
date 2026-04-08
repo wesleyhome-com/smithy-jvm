@@ -76,3 +76,13 @@ tasks.withType<DependencyUpdatesTask>().configureEach {
 		isNonStable(candidate.version)
 	}
 }
+
+tasks.register("publishGeneratorsToMavenCentral") {
+	group = "publishing"
+	description = "Publishes only generator modules to Maven Central."
+	dependsOn(
+		subprojects
+			.filter { it.path.startsWith(":generator-") }
+			.map { "${it.path}:publishAndReleaseToMavenCentral" }
+	)
+}

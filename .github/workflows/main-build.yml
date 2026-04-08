@@ -52,4 +52,4 @@ jobs:
 
       - name: Build docs and publish to Maven Central
         if: steps.publish_creds.outputs.publish_ready == 'true'
-        run: ./gradlew dokkaGenerate publishToMavenCentral --no-daemon
+        run: ./gradlew dokkaGenerate publishGeneratorsToMavenCentral --no-daemon
