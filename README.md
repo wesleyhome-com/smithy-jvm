@@ -1,4 +1,4 @@
-# smithy-to-spring-boot
+# smithy-jvm
 
 Code generators for Smithy models targeting:
 
@@ -6,9 +6,19 @@ Code generators for Smithy models targeting:
 - `java-client`
 - `java-spring-server`
 
-The project is currently **unreleased**. Documentation below reflects the current codebase only.
+## New To Smithy?
 
-For contributor and maintainer workflow, see [CONTRIBUTING.md](CONTRIBUTING.md).
+Smithy is an interface definition language (IDL) and tooling ecosystem for modeling APIs, then generating clients,
+servers, and types from that model.
+
+Official docs:
+
+- Smithy docs home: https://smithy.io/
+- Smithy `smithy-build.json` guide: https://smithy.io/2.0/guides/smithy-build-json.html
+- Smithy service shape spec (`service`, operations, resources): https://smithy.io/2.0/spec/service-types.html
+
+In this project, your Smithy model is the contract. `smithy-build.json` tells Smithy which generator plugin to run and
+what settings to pass.
 
 ## What This Project Generates
 
@@ -40,13 +50,56 @@ integrations claim the same family at the same priority, generation fails fast.
 
 ## Plugin Settings (`smithy-build.json`)
 
-All three plugins support the same core settings:
+`smithy-build.json` is the build configuration file Smithy reads when you run code generation.
+
+Minimal schema shape used by this project:
+
+```json
+{
+  "version": "2.0",
+  "projections": {
+    "my_projection_name": {
+      "plugins": {
+        "java-spring-server": {
+          "service": "com.example#MyService",
+          "package": "com.example.generated.server",
+          "dtoSuffix": "DTO"
+        }
+      }
+    }
+  }
+}
+```
+
+Important fields to understand:
+
+- `version`: Smithy build config version.
+- `projections`: named generation configurations. Each projection can run different plugins/settings.
+- `plugins`: map of plugin id to plugin settings (`java-model`, `java-client`, `java-spring-server`).
+
+Projection names (`projections.<name>`) are developer-defined labels:
+
+- You can name them anything meaningful (`server`, `client_jackson_jdk`, `model_only`, etc.).
+- The name is used in generated output paths under the Smithy output directory.
+  Example: `<smithyOutput>/server/java-spring-server/` or `<smithyOutput>/client/java-client/`.
+- Use multiple projections when you want multiple generated variants from the same model in one build.
+
+All three smithy-jvm plugins support the same core settings:
 
 | Setting     | Required | Default | Description                                                                                |
 |:------------|:---------|:--------|:-------------------------------------------------------------------------------------------|
 | `service`   | Yes      | none    | Smithy service shape id, for example `com.example#MyService`.                              |
 | `package`   | Yes      | none    | Base package for generated code.                                                           |
 | `dtoSuffix` | No       | `DTO`   | Suffix for generated structure and intEnum/enum model types (exceptions are not suffixed). |
+
+Setting details:
+
+- `service`: the root Smithy `service` shape to generate from. Format is `namespace#ServiceName`.
+  Only shapes reachable from that service closure are generated.
+- `package`: base Java package for generated output. Domain-based segments (for example `patron`) may be appended
+  during generation.
+- `dtoSuffix`: appended to generated structure and enum type names.
+  Example: `Book` -> `BookDTO` when `dtoSuffix` is `DTO`, or `Book` -> `Book` when `dtoSuffix` is `""`.
 
 Current code does **not** define other user-facing plugin settings.
 
@@ -122,6 +175,58 @@ Server behavior highlights:
 - If multiple payload members exist for a Spring controller input, generator emits validation error
   `MultiplePayloadMembers`.
 
+#### Implementing your own API components (iterative approach)
+
+Generated server code is designed so you can start with a running app and replace operation logic gradually.
+
+How bean resolution works:
+
+- For each operation, generator creates an API interface and a stub implementation in `...api.stub`.
+- Stub classes are annotated with `@ConditionalOnMissingBean(<Operation>Api.class)`.
+- `SpringDelegateFallbackConfiguration` also contributes fallback beans with the same condition.
+- Net result: if your app defines a bean implementing `<Operation>Api`, Spring will inject your bean and skip fallback.
+  Otherwise, requests hit the generated stub and return HTTP 501.
+
+Recommended rollout sequence:
+
+1. Generate and boot the server with only generated code. Endpoints exist, but unimplemented operations return 501.
+2. Pick one operation and create a Spring bean implementing that operation's generated `...api/<Operation>Api`.
+3. Keep business dependencies behind your implementation bean (repository, downstream client, mapper, etc.).
+4. Repeat operation-by-operation until all critical paths are implemented.
+
+Example custom operation implementation:
+
+```java
+package com.example.generated.patron.api.impl;
+
+import com.example.generated.patron.api.GetPatronApi;
+import com.example.generated.patron.model.GetPatronOutputDTO;
+import org.springframework.stereotype.Service;
+
+@Service
+public class GetPatronApiImpl implements GetPatronApi {
+    private final PatronService patronService;
+
+    public GetPatronApiImpl(PatronService patronService) {
+        this.patronService = patronService;
+    }
+
+    @Override
+    public GetPatronOutputDTO getPatron(String patronId) {
+        return patronService.fetchPatron(patronId);
+    }
+}
+```
+
+Practical guidance:
+
+- Treat generated `...api` interfaces as your stable application boundary.
+- Keep custom code outside generated source roots so regeneration does not overwrite implementations.
+- If you have multiple candidates for the same API interface, use `@Primary` or `@Qualifier` explicitly.
+- Throw generated Smithy error exceptions from your implementation when appropriate; generated
+  `GlobalExceptionHandler` maps them to HTTP status + DTO response body.
+- Implement and test one operation at a time (slice tests with `@WebMvcTest` or integration tests via `MockMvc`).
+
 ## Integration Modules
 
 Integrations are classpath-driven. You add/remove behavior by including/removing integration modules from `smithyBuild`.
@@ -164,8 +269,7 @@ Example output pattern for domain `patron`:
 
 ## Dependency Setup
 
-Because this project is not yet released, you currently consume generator modules from source checkout or local
-publishing.
+Use these dependencies in the project where you run Smithy code generation.
 
 ### 1. Apply Smithy Gradle plugin
 
@@ -178,13 +282,19 @@ plugins {
 
 ### 2. Add generator modules to `smithyBuild`
 
+Set a single version and use published coordinates:
+
+```kotlin
+val smithyJvmVersion = "0.1.0-SNAPSHOT"
+```
+
 Choose modules based on target and integrations you want.
 
 Model only:
 
 ```kotlin
 dependencies {
-    smithyBuild(project(":generator-java-model"))
+    smithyBuild("com.wesleyhome.smithy:generator-java-model:$smithyJvmVersion")
 }
 ```
 
@@ -192,7 +302,7 @@ Client, bare (no generated transport/codec implementation):
 
 ```kotlin
 dependencies {
-    smithyBuild(project(":generator-java-client"))
+    smithyBuild("com.wesleyhome.smithy:generator-java-client:$smithyJvmVersion")
 }
 ```
 
@@ -200,9 +310,9 @@ Client, JDK transport + Jackson codec:
 
 ```kotlin
 dependencies {
-    smithyBuild(project(":generator-java-client"))
-    smithyBuild(project(":generator-java-client-http-jdk"))
-    smithyBuild(project(":generator-java-client-codec-jackson"))
+    smithyBuild("com.wesleyhome.smithy:generator-java-client:$smithyJvmVersion")
+    smithyBuild("com.wesleyhome.smithy:generator-java-client-http-jdk:$smithyJvmVersion")
+    smithyBuild("com.wesleyhome.smithy:generator-java-client-codec-jackson:$smithyJvmVersion")
 }
 ```
 
@@ -210,9 +320,9 @@ Client, JDK transport + Gson codec:
 
 ```kotlin
 dependencies {
-    smithyBuild(project(":generator-java-client"))
-    smithyBuild(project(":generator-java-client-http-jdk"))
-    smithyBuild(project(":generator-java-client-codec-gson"))
+    smithyBuild("com.wesleyhome.smithy:generator-java-client:$smithyJvmVersion")
+    smithyBuild("com.wesleyhome.smithy:generator-java-client-http-jdk:$smithyJvmVersion")
+    smithyBuild("com.wesleyhome.smithy:generator-java-client-codec-gson:$smithyJvmVersion")
 }
 ```
 
@@ -220,9 +330,9 @@ Client, OkHttp transport + Jackson codec:
 
 ```kotlin
 dependencies {
-    smithyBuild(project(":generator-java-client"))
-    smithyBuild(project(":generator-java-client-http-okhttp"))
-    smithyBuild(project(":generator-java-client-codec-jackson"))
+    smithyBuild("com.wesleyhome.smithy:generator-java-client:$smithyJvmVersion")
+    smithyBuild("com.wesleyhome.smithy:generator-java-client-http-okhttp:$smithyJvmVersion")
+    smithyBuild("com.wesleyhome.smithy:generator-java-client-codec-jackson:$smithyJvmVersion")
 }
 ```
 
@@ -230,13 +340,11 @@ Spring server with Jackson + validation:
 
 ```kotlin
 dependencies {
-    smithyBuild(project(":generator-java-spring-server"))
-    smithyBuild(project(":generator-java-jackson"))
-    smithyBuild(project(":generator-java-validation"))
+    smithyBuild("com.wesleyhome.smithy:generator-java-spring-server:$smithyJvmVersion")
+    smithyBuild("com.wesleyhome.smithy:generator-java-jackson:$smithyJvmVersion")
+    smithyBuild("com.wesleyhome.smithy:generator-java-validation:$smithyJvmVersion")
 }
 ```
-
-When released, replace `project(...)` with published coordinates for equivalent modules.
 
 ### 3. Runtime dependencies (consumer app)
 
@@ -276,6 +384,45 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind")
 }
 ```
+
+### 4. Add generated output to Gradle source sets
+
+Smithy writes generated files to the configured output directory. Add those directories to your Gradle source sets so
+the generated Java is compiled with your application code.
+
+```kotlin
+val generatedDirectory = layout.buildDirectory.get().dir("generated/sources")
+val smithyOutput: Directory = generatedDirectory.dir("smithy")
+
+smithy {
+    outputDirectory.set(smithyOutput)
+}
+
+sourceSets {
+    main {
+        java {
+            // projection name = "server", plugin id = "java-spring-server"
+            srcDir(smithyOutput.dir("server/java-spring-server/"))
+        }
+        resources {
+            srcDir("model")
+        }
+    }
+}
+
+tasks.processResources {
+    dependsOn("smithyBuild")
+}
+
+tasks.compileJava {
+    dependsOn("smithyBuild")
+}
+```
+
+For complete wiring examples (including multiple projections), see:
+
+- `examples/sample-library-client-bare/build.gradle.kts`
+- `examples/sample-library-service/build.gradle.kts`
 
 ## `smithy-build.json` Examples
 
