@@ -41,6 +41,15 @@ jobs:
       - name: Build and test
         run: ./gradlew build --no-daemon
 
+      - name: Check publish credentials
+        id: publish_creds
+        run: |
+          if [ -n "${ORG_GRADLE_PROJECT_mavenCentralUsername}" ] && [ -n "${ORG_GRADLE_PROJECT_mavenCentralPassword}" ] && [ -n "${ORG_GRADLE_PROJECT_signingInMemoryKey}" ]; then
+            echo "publish_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish_ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build docs and publish to Maven Central
-        if: ${{ secrets.MAVEN_CENTRAL_USERNAME != '' && secrets.MAVEN_CENTRAL_PASSWORD != '' && secrets.SIGNING_KEY != '' }}
+        if: steps.publish_creds.outputs.publish_ready == 'true'
         run: ./gradlew dokkaGenerate publishToMavenCentral --no-daemon
