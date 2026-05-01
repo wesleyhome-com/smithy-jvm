@@ -3,12 +3,12 @@
 # https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
 
 [versions]
-kotlin = "2.3.20"
+kotlin = "2.3.21"
 dokka-gradle-plugin = "2.2.0"
 
 # Project specific dependencies
 smithy = "1.69.0"
-javapoet = "0.14.0"
+javapoet = "0.15.0"
 junit = "6.0.3"
 assertk = "0.28.1"
 
