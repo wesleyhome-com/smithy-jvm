@@ -14,5 +14,5 @@ repositories {
 dependencies {
 	implementation(libs.kotlinGradlePlugin)
 	implementation(libs.dokka.gradle.plugin)
-	implementation("com.vanniktech:gradle-maven-publish-plugin:0.36.0")
+	implementation("com.vanniktech:gradle-maven-publish-plugin:0.37.0")
 }
